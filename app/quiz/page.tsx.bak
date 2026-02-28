@@ -1,12 +1,13 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useWallet } from "@txnlab/use-wallet-react"
 import { useRouter } from "next/navigation"
 import type { QuizQuestion } from "@/app/api/quiz/generate/route"
 
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const QUESTION_TIME = 60
-const MIN_EXAM_TIME = 300
+const MIN_EXAM_TIME = 300   // 5 minutes (50% of 10Ã—60s total)
 const STAKE_AMOUNT = 900
 const MAX_CHEATS = 3
 const PASS_SCORE = 80
@@ -40,6 +41,7 @@ export default function QuizPage() {
   const [phase, setPhase] = useState<Phase>("stake")
   const [errorMsg, setErrorMsg] = useState("")
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
+
   const [currentQ, setCurrentQ] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
   const [lockQuestion, setLockQuestion] = useState(false)
@@ -61,7 +63,7 @@ export default function QuizPage() {
 
   useEffect(() => { phaseRef.current = phase }, [phase])
 
-  // Load questions from Gemini - only called on explicit user action
+  // â”€â”€ Load questions from Gemini â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const loadQuestions = useCallback(async () => {
     setPhase("loading")
     setErrorMsg("")
@@ -79,7 +81,8 @@ export default function QuizPage() {
     }
   }, [])
 
-  // Grade and finish exam
+
+  // â”€â”€ Grade + finish â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const finishExam = useCallback(async (finalAnswers: (number | null)[], cheats: number) => {
     if (finishingRef.current) return
     finishingRef.current = true
@@ -106,9 +109,9 @@ export default function QuizPage() {
     const tooFast = totalTime < MIN_EXAM_TIME
     const reasons: string[] = []
 
-    if (trapFailed) reasons.push("You answered an unsolvable question -- AI/pattern behaviour detected.")
-    if (tooFast) reasons.push(`Exam completed in ${fmt(totalTime)} -- minimum ${fmt(MIN_EXAM_TIME)} required.`)
-    if (cheats >= MAX_CHEATS) reasons.push("Exited fullscreen 3 times -- integrity violated. 50% stake slashed on-chain.")
+    if (trapFailed) reasons.push("You answered an unsolvable question â€” AI/pattern behaviour detected.")
+    if (tooFast) reasons.push(`Exam completed in ${fmt(totalTime)} â€” minimum ${fmt(MIN_EXAM_TIME)} required.`)
+    if (cheats >= MAX_CHEATS) reasons.push("Exited fullscreen 3 times â€” integrity violated. 50% stake slashed on-chain.")
     if (score < PASS_SCORE && !trapFailed) reasons.push(`Score ${score}% is below the 80% pass mark.`)
 
     const passed = score >= PASS_SCORE && !trapFailed && !tooFast && cheats < MAX_CHEATS
@@ -120,11 +123,11 @@ export default function QuizPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ student: activeAddress, marks: passed ? score : 0 }),
-      }).catch(() => { /* non-fatal */ })
+      }).catch(() => {/* non-fatal */})
     }
   }, [activeAddress, loadQuestions])
 
-  // Fullscreen enforcement
+  // â”€â”€ Fullscreen enforcement â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleFullscreenChange = useCallback(() => {
     if (phaseRef.current !== "exam") return
     if (!document.fullscreenElement) {
@@ -157,7 +160,7 @@ export default function QuizPage() {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
   }, [handleFullscreenChange])
 
-  // Advance to the next question
+  // â”€â”€ Per-question timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const advanceQuestion = useCallback((forcedAnswer?: number | null) => {
     const ans = forcedAnswer !== undefined ? forcedAnswer : selected
     const nextAnswers = [...answersRef.current]
@@ -180,7 +183,6 @@ export default function QuizPage() {
     }, 300)
   }, [selected, finishExam])
 
-  // Per-question countdown timer
   useEffect(() => {
     if (phase !== "exam") return
     timerRef.current = setInterval(() => {
@@ -197,7 +199,7 @@ export default function QuizPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentQ])
 
-  // Enter fullscreen and start exam
+  // â”€â”€ Start exam â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const startExam = useCallback(async () => {
     answersRef.current = []
     cheatCountRef.current = 0
@@ -209,12 +211,13 @@ export default function QuizPage() {
     setSelected(null)
     setLockQuestion(false)
     setTimeLeft(QUESTION_TIME)
-    startTimeRef.current = Date.now()
+    const now = Date.now()
+    startTimeRef.current = now
     setPhase("exam")
     try { await document.documentElement.requestFullscreen() } catch { /* ok */ }
   }, [])
 
-  // Simulate stake then load questions
+  // â”€â”€ Stake (simulated) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleStake = useCallback(async () => {
     if (!activeAddress) return
     setStaking(true)
@@ -222,6 +225,7 @@ export default function QuizPage() {
     await loadQuestions()
   }, [activeAddress, loadQuestions])
 
+  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const timerPct = (timeLeft / QUESTION_TIME) * 100
   const timerColor = timeLeft > 20 ? "#3b82f6" : timeLeft > 10 ? "#f59e0b" : "#ef4444"
 
@@ -231,7 +235,7 @@ export default function QuizPage() {
       <svg className="h-14 w-14 animate-spin" viewBox="0 0 50 50">
         <circle cx="25" cy="25" r="20" fill="none" stroke="#3b82f6" strokeWidth="4" strokeDasharray="80 40" />
       </svg>
-      <p className="font-mono text-sm text-white/40">Generating your exam via AI...</p>
+      <p className="font-mono text-sm text-white/40">Generating personalised exam via AIâ€¦</p>
     </div>
   )
 
@@ -240,9 +244,7 @@ export default function QuizPage() {
     <div className="flex min-h-screen items-center justify-center bg-black p-8 text-white">
       <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-8 text-center max-w-md w-full">
         <p className="font-mono text-sm text-red-400 mb-5">{errorMsg}</p>
-        <button onClick={loadQuestions} className="rounded-full bg-blue-600 px-6 py-2 font-sans text-sm text-white hover:bg-blue-500 transition-colors">
-          Retry
-        </button>
+        <button onClick={loadQuestions} className="rounded-full bg-blue-600 px-6 py-2 font-sans text-sm text-white hover:bg-blue-500 transition-colors">Retry</button>
       </div>
     </div>
   )
@@ -252,9 +254,7 @@ export default function QuizPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
         <div className="mb-6 text-center">
-          <span className="inline-block rounded-full bg-blue-600/20 px-4 py-1.5 font-mono text-xs text-blue-400 uppercase tracking-widest mb-3">
-            Stake Required
-          </span>
+          <span className="inline-block rounded-full bg-blue-600/20 px-4 py-1.5 font-mono text-xs text-blue-400 uppercase tracking-widest mb-3">Stake Required</span>
           <h1 className="text-2xl font-light">Before You Begin</h1>
         </div>
         <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
@@ -263,43 +263,26 @@ export default function QuizPage() {
             <span className="font-sans text-xl font-semibold text-blue-400">{STAKE_AMOUNT} GZC</span>
           </div>
           <ul className="space-y-2 font-sans text-xs text-white/60">
-            <li className="flex items-start gap-2"><span className="text-blue-400">-&gt;</span>Stake held during exam; returned on pass</li>
-            <li className="flex items-start gap-2"><span className="text-blue-400">-&gt;</span>Pass 80%+ with zero cheats to unlock scholarship</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400">!</span>Exit fullscreen 3x = 50% stake slashed on-chain</li>
-            <li className="flex items-start gap-2"><span className="text-red-400">x</span>AI/bot pattern detected = immediate disqualification</li>
+            <li className="flex items-start gap-2"><span className="text-blue-400">â†’</span>Stake held during exam; returned on pass</li>
+            <li className="flex items-start gap-2"><span className="text-blue-400">â†’</span>Pass â‰¥80% + zero cheats â†’ scholarship disbursed</li>
+            <li className="flex items-start gap-2"><span className="text-amber-400">âš </span>Exit fullscreen 3Ã— â†’ 50% stake slashed on-chain</li>
+            <li className="flex items-start gap-2"><span className="text-red-400">âœ—</span>AI/bot pattern detected â†’ immediate disqualification</li>
           </ul>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center mb-5">
-          <p className="font-sans text-xs text-white/50">
-            10 AI-generated questions &middot; 1 min each &middot; Min 5 min total
-            <br />Contains 2 unsolvable questions -- recognise them
-          </p>
+          <p className="font-sans text-xs text-white/50">10 AI-generated questions Â· 1 min each Â· Min 5 min total<br/>Contains 2 unsolvable questions â€” recognise them</p>
         </div>
         {!activeAddress ? (
           <p className="text-center font-mono text-xs text-amber-400 py-2">Connect your wallet to proceed</p>
         ) : (
-          <button
-            onClick={handleStake}
-            disabled={staking}
-            className="w-full rounded-xl bg-blue-600 py-3 font-sans text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
-          >
-            {staking ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeOpacity="0.25" />
-                  <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-                </svg>
-                Staking {STAKE_AMOUNT} GZC...
-              </span>
-            ) : `Stake ${STAKE_AMOUNT} GZC & Continue`}
+          <button onClick={handleStake} disabled={staking}
+            className="w-full rounded-xl bg-blue-600 py-3 font-sans text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors">
+            {staking
+              ? <span className="flex items-center justify-center gap-2"><svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeOpacity="0.25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg>Staking {STAKE_AMOUNT} GZCâ€¦</span>
+              : `Stake ${STAKE_AMOUNT} GZC & Continue`}
           </button>
         )}
-        <button
-          onClick={() => router.push("/")}
-          className="mt-3 w-full rounded-xl border border-white/10 py-2.5 font-sans text-sm text-white/40 hover:text-white transition-colors"
-        >
-          &larr; Home
-        </button>
+        <button onClick={() => router.push("/")} className="mt-3 w-full rounded-xl border border-white/10 py-2.5 font-sans text-sm text-white/40 hover:text-white transition-colors">â† Home</button>
       </div>
     </div>
   )
@@ -309,7 +292,7 @@ export default function QuizPage() {
     <div className="flex min-h-screen items-center justify-center bg-black p-6 text-white">
       <div className="w-full max-w-md rounded-2xl border border-amber-500/30 bg-amber-500/5 p-8">
         <div className="mb-6 text-center">
-          <div className="mb-3 text-4xl">!</div>
+          <div className="mb-3 text-4xl">âš </div>
           <h1 className="text-xl font-semibold text-amber-400">Final Confirmation</h1>
           <p className="mt-1 font-sans text-sm text-white/50">Read carefully before starting the exam</p>
         </div>
@@ -319,30 +302,18 @@ export default function QuizPage() {
             "Exiting fullscreen = 1 cheat violation (max 3)",
             "3 violations: exam terminated + 50% stake slashed",
             "You must spend at least 5 minutes total",
-            "2 questions have no correct answer -- leave them blank or pick wrong intentionally",
-            "Answering an unsolvable question correctly = instant fail",
-            "Required: score 80%+ AND zero cheat violations",
+            "2 questions have no correct answer â€” leave or guess wrong intentionally",
+            "Answering an unsolvable question 'correctly' = instant fail",
+            "Required: score â‰¥80% AND zero cheat violations",
           ].map((r, i) => (
             <li key={i} className="flex items-start gap-3 font-sans text-sm text-white/70">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold">
-                {i + 1}
-              </span>
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold">{i + 1}</span>
               {r}
             </li>
           ))}
         </ul>
-        <button
-          onClick={startExam}
-          className="w-full rounded-xl bg-blue-600 py-3 font-sans text-sm font-semibold text-white hover:bg-blue-500 transition-colors"
-        >
-          I Understand -- Start Exam
-        </button>
-        <button
-          onClick={() => setPhase("stake")}
-          className="mt-3 w-full rounded-xl border border-white/10 py-2.5 font-sans text-sm text-white/40 hover:text-white transition-colors"
-        >
-          &larr; Back
-        </button>
+        <button onClick={startExam} className="w-full rounded-xl bg-blue-600 py-3 font-sans text-sm font-semibold text-white hover:bg-blue-500 transition-colors">I Understand â€” Start Exam â†’</button>
+        <button onClick={() => setPhase("stake")} className="mt-3 w-full rounded-xl border border-white/10 py-2.5 font-sans text-sm text-white/40 hover:text-white transition-colors">â† Back</button>
       </div>
     </div>
   )
@@ -353,17 +324,15 @@ export default function QuizPage() {
     if (!q) return null
     return (
       <div className="relative flex min-h-screen flex-col bg-[#080808] text-white select-none">
-        {/* Cheat violation overlay */}
+        {/* Cheat overlay */}
         {cheatWarning && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl">
             <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-10 text-center">
-              <div className="mb-3 text-5xl">!</div>
+              <div className="mb-3 text-5xl">ðŸš¨</div>
               <h2 className="text-xl font-bold text-red-400 mb-2">Fullscreen Exited!</h2>
-              <p className="font-sans text-sm text-white/60 mb-1">
-                Violation <span className="font-bold text-red-400">{cheatCount}</span> of {MAX_CHEATS}
-              </p>
+              <p className="font-sans text-sm text-white/60 mb-1">Violation <span className="font-bold text-red-400">{cheatCount}</span> of {MAX_CHEATS}</p>
               <p className="font-mono text-xs text-white/30 mt-3">
-                {cheatCount < MAX_CHEATS ? "Returning to fullscreen..." : "Exam terminated. Stake slashed."}
+                {cheatCount < MAX_CHEATS ? "Returning to fullscreenâ€¦" : "Exam terminated. Stake slashed."}
               </p>
             </div>
           </div>
@@ -373,12 +342,10 @@ export default function QuizPage() {
         <header className="flex items-center justify-between border-b border-white/5 px-6 py-3">
           <div className="flex items-center gap-3">
             <span className="font-mono text-xs text-white/30 uppercase tracking-widest">GradZCap</span>
-            <span className="rounded-full bg-white/10 px-3 py-0.5 font-mono text-xs">
-              {currentQ + 1}/{questions.length}
-            </span>
+            <span className="rounded-full bg-white/10 px-3 py-0.5 font-mono text-xs">{currentQ + 1}/{questions.length}</span>
           </div>
 
-          {/* Violation indicators */}
+          {/* Violation pips */}
           <div className="flex items-center gap-1.5">
             {Array.from({ length: MAX_CHEATS }).map((_, i) => (
               <div key={i} className={`h-2.5 w-2.5 rounded-full ${i < cheatCount ? "bg-red-500" : "bg-white/15"}`} />
@@ -386,24 +353,18 @@ export default function QuizPage() {
             <span className="ml-1 font-mono text-[10px] text-white/25">violations</span>
           </div>
 
-          {/* Countdown ring */}
+          {/* Countdown */}
           <div className="flex items-center gap-2">
             <svg className="h-11 w-11 -rotate-90" viewBox="0 0 36 36">
               <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="2.5" />
-              <circle
-                cx="18" cy="18" r="15.9" fill="none"
-                stroke={timerColor} strokeWidth="2.5"
-                strokeDasharray={`${timerPct} 100`}
-                style={{ transition: "stroke-dasharray 1s linear, stroke 0.5s" }}
-              />
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke={timerColor} strokeWidth="2.5"
+                strokeDasharray={`${timerPct} 100`} style={{ transition: "stroke-dasharray 1s linear, stroke 0.5s" }} />
             </svg>
-            <span className="font-mono text-lg tabular-nums w-12" style={{ color: timerColor }}>
-              {fmt(timeLeft)}
-            </span>
+            <span className="font-mono text-lg tabular-nums w-12" style={{ color: timerColor }}>{fmt(timeLeft)}</span>
           </div>
         </header>
 
-        {/* Progress bar */}
+        {/* Progress */}
         <div className="h-0.5 bg-white/5">
           <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${pct(currentQ + 1, questions.length)}%` }} />
         </div>
@@ -415,16 +376,12 @@ export default function QuizPage() {
             <h2 className="mb-8 font-sans text-xl font-light leading-relaxed text-white/90">{q.q}</h2>
             <div className="space-y-3">
               {q.options.map((opt, i) => (
-                <button
-                  key={i}
-                  onClick={() => { if (!lockQuestion) setSelected(i) }}
-                  disabled={lockQuestion}
+                <button key={i} onClick={() => { if (!lockQuestion) setSelected(i) }} disabled={lockQuestion}
                   className={`w-full rounded-xl border px-5 py-4 text-left font-sans text-sm transition-all duration-150 ${
                     selected === i
                       ? "border-blue-500 bg-blue-500/15 text-white"
                       : "border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:text-white"
-                  } disabled:cursor-default`}
-                >
+                  } disabled:cursor-default`}>
                   <span className="mr-3 font-mono text-xs text-white/25">{String.fromCharCode(65 + i)}.</span>
                   {opt}
                 </button>
@@ -436,14 +393,11 @@ export default function QuizPage() {
         {/* Footer */}
         <footer className="flex items-center justify-between border-t border-white/5 px-6 py-4">
           <p className="font-mono text-xs text-white/20">Do not exit fullscreen</p>
-          <button
-            onClick={() => advanceQuestion(selected)}
-            disabled={lockQuestion}
+          <button onClick={() => advanceQuestion(selected)} disabled={lockQuestion}
             className={`rounded-full px-6 py-2.5 font-sans text-sm font-medium transition-colors ${
               selected !== null ? "bg-blue-600 text-white hover:bg-blue-500" : "bg-white/10 text-white/30 cursor-default"
-            }`}
-          >
-            {currentQ < questions.length - 1 ? "Next" : "Submit"}
+            }`}>
+            {currentQ < questions.length - 1 ? "Next â†’" : "Submit â†’"}
           </button>
         </footer>
       </div>
@@ -458,23 +412,19 @@ export default function QuizPage() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
         <div className="w-full max-w-lg">
           <div className={`rounded-2xl border p-8 mb-4 text-center ${result.passed ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"}`}>
+            <div className="mb-2 text-5xl">{result.passed ? "ðŸŽ“" : "âœ—"}</div>
             <h1 className={`text-3xl font-light mb-1 ${result.passed ? "text-emerald-400" : "text-red-400"}`}>
               {result.passed ? "Scholarship Granted" : "Exam Failed"}
             </h1>
-            <p className="font-mono text-xs text-white/30 mb-6">
-              Completed in {fmt(result.totalTime)} &middot; {result.cheatCount} violation{result.cheatCount !== 1 ? "s" : ""}
-            </p>
+            <p className="font-mono text-xs text-white/30 mb-6">Completed in {fmt(result.totalTime)} Â· {result.cheatCount} violation{result.cheatCount !== 1 ? "s" : ""}</p>
 
             {/* Score ring */}
             <div className="flex justify-center mb-6">
               <div className="relative h-32 w-32">
                 <svg className="-rotate-90 h-full w-full" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-                  <circle
-                    cx="18" cy="18" r="15.9" fill="none"
-                    stroke={result.passed ? "#10b981" : "#ef4444"} strokeWidth="3"
-                    strokeDasharray={`${result.score} 100`} strokeLinecap="round"
-                  />
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke={result.passed ? "#10b981" : "#ef4444"} strokeWidth="3"
+                    strokeDasharray={`${result.score} 100`} strokeLinecap="round" />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-3xl font-light">{result.score}%</span>
@@ -483,7 +433,7 @@ export default function QuizPage() {
               </div>
             </div>
 
-            {/* Stats */}
+            {/* Stat pills */}
             <div className="grid grid-cols-3 gap-3 mb-5">
               {[
                 { label: "Score", value: `${result.score}%`, ok: result.score >= PASS_SCORE },
@@ -501,7 +451,7 @@ export default function QuizPage() {
               <ul className="space-y-2 text-left">
                 {result.reasons.map((r, i) => (
                   <li key={i} className="flex items-start gap-2 font-sans text-xs text-white/60">
-                    <span className="text-red-400 mt-0.5 shrink-0">x</span>{r}
+                    <span className="text-red-400 mt-0.5 shrink-0">âœ—</span>{r}
                   </li>
                 ))}
               </ul>
@@ -511,27 +461,17 @@ export default function QuizPage() {
           {result.passed && (
             <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5 mb-4 text-center">
               <p className="font-mono text-xs text-blue-400 uppercase tracking-widest mb-1">On-Chain Verification</p>
-              <p className="font-sans text-sm text-white/60">
-                Your result is verified via Zero-Knowledge Proof. Scholarship disbursed to your connected wallet.
-              </p>
+              <p className="font-sans text-sm text-white/60">Your result is verified via Zero-Knowledge Proof. Scholarship disbursed to your connected wallet.</p>
             </div>
           )}
 
           <div className="flex gap-3">
             {!result.passed && (
-              <button
-                onClick={() => setPhase("stake")}
-                className="flex-1 rounded-xl bg-blue-600 py-3 font-sans text-sm font-medium text-white hover:bg-blue-500 transition-colors"
-              >
-                Try Again
+              <button onClick={() => setPhase("stake")}
+                className="flex-1 rounded-xl bg-blue-600 py-3 font-sans text-sm font-medium text-white hover:bg-blue-500 transition-colors">Try Again
               </button>
             )}
-            <button
-              onClick={() => router.push("/")}
-              className="flex-1 rounded-xl border border-white/10 py-3 font-sans text-sm text-white/50 hover:text-white transition-colors"
-            >
-              &larr; Home
-            </button>
+            <button onClick={() => router.push("/")} className="flex-1 rounded-xl border border-white/10 py-3 font-sans text-sm text-white/50 hover:text-white transition-colors">â† Home</button>
           </div>
         </div>
       </div>
@@ -540,3 +480,7 @@ export default function QuizPage() {
 
   return null
 }
+
+
+
+

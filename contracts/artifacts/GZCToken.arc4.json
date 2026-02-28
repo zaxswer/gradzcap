@@ -1,0 +1,89 @@
+{
+  "name": "GZCToken",
+  "desc": "",
+  "methods": [
+    {
+      "name": "createApplication",
+      "args": [],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "bootstrap",
+      "args": [],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "buyGZC",
+      "args": [
+        {
+          "name": "payment",
+          "type": "pay"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "sellGZC",
+      "args": [
+        {
+          "name": "gzcPayment",
+          "type": "axfer"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "withdrawAlgo",
+      "args": [
+        {
+          "name": "amount",
+          "type": "uint64"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "transferOwnership",
+      "args": [
+        {
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "getAsaId",
+      "args": [],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "getGZCReserve",
+      "args": [],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "getAlgoReserve",
+      "args": [],
+      "returns": {
+        "type": "uint64"
+      }
+    }
+  ]
+}

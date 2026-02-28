@@ -9,6 +9,7 @@ import { AboutSection } from "@/components/sections/about-section"
 import { ContactSection } from "@/components/sections/contact-section"
 import { MagneticButton } from "@/components/magnetic-button"
 import { useRef, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 export default function Home() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -18,6 +19,7 @@ export default function Home() {
   const touchStartX = useRef(0)
   const shaderContainerRef = useRef<HTMLDivElement>(null)
   const scrollThrottleRef = useRef<number | undefined>(undefined)
+  const router = useRouter()
 
   useEffect(() => {
     const checkShaderReady = () => {
@@ -221,7 +223,7 @@ export default function Home() {
           onClick={() => scrollToSection(0)}
           className="flex items-center gap-2 transition-transform hover:scale-105"
         >
-          <img src="/logo_bnw.png" alt="GradeZCap" className="h-15 w-auto" />
+          <img src="/logo_bnw.png" alt="GradZCap" className="h-15 w-auto" />
         </button>
 
         <div className="hidden items-center gap-8 md:flex">
@@ -271,7 +273,7 @@ export default function Home() {
             </h1>
             <p className="mb-8 max-w-xl animate-in fade-in slide-in-from-bottom-4 text-lg leading-relaxed text-foreground/90 duration-1000 delay-200 md:text-xl">
               <span className="text-pretty">
-                GradeZCap relieves students of financial strain and debt. Complete blockchain learning modules,
+                GradZCap relieves students of financial strain and debt. Complete blockchain learning modules,
                 pass the quiz, and earn a scholarship — verified with Zero-Knowledge Proofs.
               </span>
             </p>
@@ -279,7 +281,7 @@ export default function Home() {
               <MagneticButton
                 size="lg"
                 variant="primary"
-                onClick={() => scrollToSection(1)}
+                onClick={() => router.push("/quiz")}
               >
                 Take the Quiz
               </MagneticButton>

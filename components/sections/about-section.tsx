@@ -36,7 +36,7 @@ export function AboutSection({ scrollToSection }: { scrollToSection?: (index: nu
               style={{ transitionDelay: "200ms" }}
             >
               <p className="max-w-md text-sm leading-relaxed text-foreground/90 md:text-lg">
-                Connect your Web3 wallet to participate in GradeZCap's scholarship ecosystem.
+                Connect your Web3 wallet to participate in GradZCap's scholarship ecosystem.
                 Your achievements are stored on-chain — transparent, immutable, and yours.
               </p>
               <p className="max-w-md text-sm leading-relaxed text-foreground/90 md:text-lg">

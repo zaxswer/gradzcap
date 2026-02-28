@@ -50,7 +50,7 @@ export function ContactSection() {
                 <br />
                 Us
               </h2>
-              <p className="font-mono text-xs text-foreground/60 md:text-base">/ GradeZCap</p>
+              <p className="font-mono text-xs text-foreground/60 md:text-base">/ GradZCap</p>
             </div>
 
             <div
@@ -60,7 +60,7 @@ export function ContactSection() {
               style={{ transitionDelay: "100ms" }}
             >
               <p className="max-w-md text-sm leading-relaxed text-foreground/80 md:text-base">
-                GradeZCap is a blockchain-powered scholarship platform built to relieve students from
+                GradZCap is a blockchain-powered scholarship platform built to relieve students from
                 financial strain and debt. We use Zero-Knowledge Proofs to verify academic eligibility
                 while keeping your data private. Pass our on-chain quizzes and earn real scholarships —
                 no loans, no debt.

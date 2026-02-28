@@ -1,0 +1,70 @@
+{
+  "name": "IntegrityExam",
+  "desc": "",
+  "methods": [
+    {
+      "name": "createApplication",
+      "desc": "Initialize the contract",
+      "args": [
+        {
+          "name": "gzcId",
+          "type": "uint64"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "optInToAsset",
+      "desc": "Opt the contract into the GZC ASA so it can receive tokens.\nOnly the creator can call this.",
+      "args": [],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "stakeAndStart",
+      "desc": "Student stakes balance to start the exam.\nUser must opt-in to the app before calling this.",
+      "args": [
+        {
+          "name": "stakePmt",
+          "type": "axfer"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "recordCheat",
+      "desc": "AI Proctor / Backend records a cheat event.",
+      "args": [
+        {
+          "name": "student",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "completeExam",
+      "desc": "Complete exam and handle scholarship/refund",
+      "args": [
+        {
+          "name": "student",
+          "type": "address"
+        },
+        {
+          "name": "finalMarks",
+          "type": "uint64"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    }
+  ]
+}

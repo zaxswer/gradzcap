@@ -8,6 +8,7 @@ import { ServicesSection } from "@/components/sections/services-section"
 import { AboutSection } from "@/components/sections/about-section"
 import { ContactSection } from "@/components/sections/contact-section"
 import { MagneticButton } from "@/components/magnetic-button"
+import { WalletConnectButton } from "@/components/wallet-connect-button"
 import { useRef, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -245,9 +246,7 @@ export default function Home() {
           ))}
         </div>
 
-        <MagneticButton variant="secondary" onClick={() => scrollToSection(1)}>
-          Apply Now
-        </MagneticButton>
+        <WalletConnectButton />
       </nav>
 
       <div

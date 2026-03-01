@@ -37,14 +37,14 @@ export class GZCToken extends Contract {
       amount: { greaterThan: 0 as uint64 },
     });
 
-    const gzcAmount = payment.amount;
+    // 1 ALGO (1_000_000 microALGO) = 1_000_000 GZC (1_000_000_000_000 microGZC)
+    const gzcAmount = payment.amount * 1_000_000;
 
     assert(
       this.app.address.assetBalance(this.gzcAsaId.value) >= gzcAmount,
       'GZC: insufficient reserve'
     );
 
-    // IMPORTANT: Added fee: 1_000 for the inner asset transfer
     sendAssetTransfer({
       xferAsset: this.gzcAsaId.value,
       assetReceiver: this.txn.sender,
@@ -60,14 +60,19 @@ export class GZCToken extends Contract {
       assetAmount: { greaterThan: 0 as uint64 },
     });
 
-    const algoReturn = gzcPayment.assetAmount;
+    // Reverse: 1_000_000 GZC = 1 ALGO
+    const algoReturn = gzcPayment.assetAmount / 1_000_000;
+
+    assert(
+      algoReturn > 0,
+      'GZC: amount too small to convert'
+    );
 
     assert(
       this.app.address.balance >= algoReturn + this.app.address.minBalance,
       'GZC: insufficient ALGO reserve'
     );
 
-    // IMPORTANT: Added fee: 1_000 for the inner payment
     sendPayment({
       receiver: this.txn.sender,
       amount: algoReturn,

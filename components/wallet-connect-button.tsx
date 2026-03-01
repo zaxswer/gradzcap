@@ -4,10 +4,10 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { useWallet } from "@txnlab/use-wallet-react"
 import algosdk from "algosdk"
 
-const ALGOD_SERVER = "https://testnet-api.4160.nodely.dev"
+const ALGOD_SERVER = "https://testnet-api.algonode.cloud"
 const ALGOD_TOKEN = ""
 const ALGOD_PORT = 443
-const GZC_ASA_ID = Number(process.env.NEXT_PUBLIC_GZC_ASA_ID ?? 756321188)
+const GZC_ASA_ID = Number(process.env.NEXT_PUBLIC_GZC_ASA_ID) || 756356387
 
 function truncate(addr: string) {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`
@@ -22,10 +22,9 @@ export function WalletConnectButton() {
   const [open, setOpen] = useState(false)
   const [showWallets, setShowWallets] = useState(false)
   const [gzcBalance, setGzcBalance] = useState<number | null>(null)
+  const [algoBalance, setAlgoBalance] = useState<number | null>(null)
   const [isOptedIn, setIsOptedIn] = useState(false)
   const [loadingBalance, setLoadingBalance] = useState(false)
-  const [optingIn, setOptingIn] = useState(false)
-  const [optInError, setOptInError] = useState("")
   const [resuming, setResuming] = useState(true)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -48,7 +47,22 @@ export function WalletConnectButton() {
     setLoadingBalance(true)
     try {
       const algod = new algosdk.Algodv2(ALGOD_TOKEN, ALGOD_SERVER, ALGOD_PORT)
+      
+      // Check network genesis hash to ensure it's TestNet
+      const params = await algod.getTransactionParams().do()
+      const TESTNET_GENESIS_HASH = "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI="
+      
+      // params.genesisHash is a Uint8Array, convert to base64 string for comparison
+      const actualHash = Buffer.from(params.genesisHash).toString("base64")
+      
+      if (actualHash !== TESTNET_GENESIS_HASH) {
+        console.error("Not connected to TestNet")
+        return
+      }
+
       const info = await algod.accountInformation(address).do()
+      setAlgoBalance(Number(info.amount))
+
       const assets = (info.assets ?? []) as Array<{ assetId: bigint | number; amount: bigint | number }>
       const gzcHolding = assets.find((a) => Number(a.assetId) === GZC_ASA_ID)
       if (gzcHolding) {
@@ -58,7 +72,8 @@ export function WalletConnectButton() {
         setIsOptedIn(false)
         setGzcBalance(null)
       }
-    } catch {
+    } catch (e) {
+      console.error("Balance fetch error:", e)
       setGzcBalance(null)
     } finally {
       setLoadingBalance(false)
@@ -75,6 +90,13 @@ export function WalletConnectButton() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAddress])
 
+  // Re-fetch when staking or other components change the balance
+  useEffect(() => {
+    const handler = () => { if (activeAddress) fetchBalance(activeAddress) }
+    window.addEventListener("gzc-balance-changed", handler)
+    return () => window.removeEventListener("gzc-balance-changed", handler)
+  }, [activeAddress, fetchBalance])
+
   const activeWallet = wallets.find((w) => w.isActive)
 
   const handleDisconnect = async () => {
@@ -88,33 +110,6 @@ export function WalletConnectButton() {
     const wallet = wallets.find((w) => w.id === walletId)
     if (wallet) await wallet.connect()
     setShowWallets(false)
-  }
-
-  const handleOptIn = async () => {
-    if (!activeAddress) return
-    setOptingIn(true)
-    setOptInError("")
-    try {
-      const algod = new algosdk.Algodv2(ALGOD_TOKEN, ALGOD_SERVER, ALGOD_PORT)
-      const sp = await algod.getTransactionParams().do()
-      const optInTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: activeAddress,
-        receiver: activeAddress,
-        assetIndex: GZC_ASA_ID,
-        amount: 0,
-        suggestedParams: sp,
-      })
-      const encoded = algosdk.encodeUnsignedTransaction(optInTxn)
-      const signed = await signTransactions([[encoded]])
-      await algod.sendRawTransaction(signed[0]).do()
-      await algosdk.waitForConfirmation(algod, optInTxn.txID(), 4)
-      await fetchBalance(activeAddress)
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      setOptInError(msg.toLowerCase().includes("rejected") ? "Rejected in wallet." : "Opt-in failed. Try again.")
-    } finally {
-      setOptingIn(false)
-    }
   }
 
   if (activeAddress) {
@@ -152,24 +147,6 @@ export function WalletConnectButton() {
 
     return (
       <div ref={ref} className="relative">
-        {/* Opt-in banner -- shown automatically when GZC not in wallet */}
-        {!isOptedIn && (
-          <div className="absolute right-0 top-full mt-2 z-[200] w-72 rounded-xl border border-amber-500/30 bg-[#111] p-3 shadow-xl backdrop-blur-xl">
-            <p className="font-sans text-xs text-amber-300 font-medium mb-1">GZC Token not in your wallet</p>
-            <p className="font-mono text-[10px] text-white/50 mb-2.5">
-              Add GZC (ASA #{GZC_ASA_ID}) to participate in the scholarship exam.
-            </p>
-            <button
-              onClick={handleOptIn}
-              disabled={optingIn}
-              className="w-full rounded-lg bg-amber-500 py-1.5 font-sans text-xs font-semibold text-black hover:bg-amber-400 disabled:opacity-60 transition-colors"
-            >
-              {optingIn ? "Adding to wallet..." : "Add GZC Token"}
-            </button>
-            {optInError && <p className="mt-1.5 font-mono text-[10px] text-red-400">{optInError}</p>}
-          </div>
-        )}
-
         <button
           onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground/10 px-4 py-1.5 font-mono text-xs text-foreground backdrop-blur-md transition-colors hover:bg-foreground/20"
@@ -210,19 +187,9 @@ export function WalletConnectButton() {
                 ) : isOptedIn && gzcBalance !== null ? (
                   <>{formatGZC(gzcBalance)} <span className="text-lg text-foreground/50">GZC</span></>
                 ) : (
-                  <span className="text-sm text-amber-400">GZC not added</span>
+                  <span className="text-sm text-foreground/50">No GZC Balance</span>
                 )}
               </p>
-              {!isOptedIn && (
-                <button
-                  onClick={handleOptIn}
-                  disabled={optingIn}
-                  className="mt-2 rounded-full bg-amber-500 px-4 py-1 font-sans text-xs font-semibold text-black hover:bg-amber-400 disabled:opacity-60 transition-colors"
-                >
-                  {optingIn ? "Adding..." : "+ Add GZC Token"}
-                </button>
-              )}
-              {optInError && <p className="mt-1 font-mono text-[10px] text-red-400 text-center">{optInError}</p>}
             </div>
 
             <div className="border-t border-foreground/10">

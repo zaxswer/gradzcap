@@ -106,7 +106,9 @@ export function WalletConnectButton() {
       })
       const encoded = algosdk.encodeUnsignedTransaction(optInTxn)
       const signed = await signTransactions([[encoded]])
-      await algod.sendRawTransaction(signed[0]).do()
+      const signedTxn = signed[0]
+      if (!signedTxn) throw new Error("Wallet did not return a signed transaction.")
+      await algod.sendRawTransaction(signedTxn).do()
       await algosdk.waitForConfirmation(algod, optInTxn.txID(), 4)
       await fetchBalance(activeAddress)
     } catch (e: unknown) {

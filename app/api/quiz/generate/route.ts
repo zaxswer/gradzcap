@@ -44,37 +44,37 @@ function writeCache(questions: QuizQuestion[]) {
   }
 }
 
-// Deduplicate simultaneous requests (React StrictMode double-invoke etc.)
-let inflightPromise: Promise<QuizQuestion[]> | null = null
+// Per-session in-memory cache: sessionId -> { questions, ts }
+// Prevents duplicate Gemini calls on refresh within the same quiz attempt
+const SESSION_STORE = new Map<string, { questions: QuizQuestion[]; ts: number }>()
+const SESSION_TTL_MS = 30 * 60 * 1000 // 30 min
 
-const SYSTEM_PROMPT = `You are generating a timed online exam for a blockchain scholarship programme.
+// Per-address throttle: prevents >1 fresh Gemini call per wallet per 5 min
+const ADDRESS_THROTTLE = new Map<string, number>() // address -> last-call timestamp
+const THROTTLE_WINDOW_MS = 5 * 60 * 1000 // 5 min
 
-Generate exactly 10 multiple-choice questions about Blockchain technology and Linux.
+// Per-session inflight deduplication (replaces the old single global promise)
+const inflightMap = new Map<string, Promise<QuizQuestion[]>>()
 
-Rules:
-- 8 questions must be genuine, solvable questions (blockchain concepts, Algorand, DeFi, ZK-proofs, Linux commands, file systems, permissions, processes).
-- 2 questions must be completely unsolvable "intelligence traps":
-  - Base them on non-existent technology, contradictory premises, or paradoxes.
-  - They must look plausible enough that an AI or overconfident person would pick an answer.
-  - A thoughtful human should recognise there is no correct answer.
-  - For each trap question, also provide the "trap answer" - the index (0-3) of the option that looks most convincingly correct but is wrong.
-- Each real question must have exactly 4 options (A-D) with one unambiguously correct answer.
-- Questions should be challenging - suitable for someone with intermediate knowledge.
-- Shuffle the 2 trap questions to random positions in the 10-question set.
+// Purge stale session entries to prevent memory leaks
+function pruneSessionStore() {
+  const now = Date.now()
+  for (const [key, val] of SESSION_STORE) {
+    if (now - val.ts > SESSION_TTL_MS) SESSION_STORE.delete(key)
+  }
+}
 
-Respond with ONLY valid JSON, no markdown fences, no extra text. Schema:
-{
-  "questions": [
-    { "id": 1, "q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": 2, "isTrap": false },
-    { "id": 5, "q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": -1, "isTrap": true, "trapAnswer": 1 }
-  ]
-}`
+// Compact, low-token prompt (~150 tokens vs the original ~450)
+const SYSTEM_PROMPT = `Generate 10 blockchain/Linux MCQ for a scholarship exam. Return ONLY valid JSON, no markdown.
+8 real questions (Algorand PPoS, DeFi, ZK-proofs, Linux CLI/permissions/processes) — intermediate level, 4 options (A-D), one correct answer.
+2 trap questions — look plausible but have NO correct answer (contradictory premise or invented tech). Include trapAnswer (0-3) for the most convincing wrong option. Shuffle traps into random positions.
+Schema: {"questions":[{"id":1,"q":"...","options":["A...","B...","C...","D..."],"answer":2,"isTrap":false},{"id":2,"q":"...","options":["A...","B...","C...","D..."],"answer":-1,"isTrap":true,"trapAnswer":1}]}`
 
 async function callGemini(apiKey: string): Promise<QuizQuestion[]> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
   const reqBody = JSON.stringify({
     contents: [{ parts: [{ text: SYSTEM_PROMPT }] }],
-    generationConfig: { temperature: 1.0, maxOutputTokens: 4096 },
+    generationConfig: { temperature: 0.9, maxOutputTokens: 1800 },
   })
 
   const delays = [5000, 15000, 30000]
@@ -224,7 +224,7 @@ const MOCK_QUESTIONS: QuizQuestion[] = [
   },
 ]
 
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
   // --- MOCK MODE: bypass Gemini entirely ---
   if (MOCK_MODE) {
     return NextResponse.json({ questions: MOCK_QUESTIONS })
@@ -233,29 +233,61 @@ export async function POST(_req: NextRequest) {
 
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    return NextResponse.json({ error: "GEMINI_API_KEY not set in environment." }, { status: 500 })
+    return NextResponse.json({ error: "GEMINI_API_KEY not configured." }, { status: 500 })
   }
 
-  // Serve from file cache first (survives hot reloads)
-  const cached = readCache()
-  if (cached) {
-    return NextResponse.json({ questions: cached })
+  // Parse session/address from request body
+  let sessionId = ""
+  let address = ""
+  try {
+    const body = await req.json()
+    sessionId = String(body.sessionId ?? "")
+    address = String(body.address ?? "")
+  } catch { /* empty body is fine */ }
+
+  pruneSessionStore()
+
+  // 1. Session cache hit -- same quiz attempt refreshed the page
+  if (sessionId) {
+    const hit = SESSION_STORE.get(sessionId)
+    if (hit && Date.now() - hit.ts < SESSION_TTL_MS) {
+      return NextResponse.json({ questions: hit.questions, cached: true })
+    }
   }
 
-  // Deduplicate concurrent cold-start calls
-  if (!inflightPromise) {
-    inflightPromise = callGemini(apiKey)
-      .then((questions) => {
-        writeCache(questions)
-        return questions
-      })
-      .finally(() => {
-        inflightPromise = null
-      })
+  // 2. Per-address throttle -- max 1 fresh Gemini call per wallet per 5 min
+  if (address) {
+    const lastCall = ADDRESS_THROTTLE.get(address) ?? 0
+    const elapsed = Date.now() - lastCall
+    if (elapsed < THROTTLE_WINDOW_MS) {
+      const retryIn = Math.ceil((THROTTLE_WINDOW_MS - elapsed) / 1000)
+      return NextResponse.json(
+        { error: `Rate limited. Please wait ${retryIn}s before generating new questions.`, retryIn },
+        { status: 429 }
+      )
+    }
+  }
+
+  // 3. Global file cache (survives hot reloads in dev)
+  const fileCached = readCache()
+  if (fileCached) {
+    if (sessionId) SESSION_STORE.set(sessionId, { questions: fileCached, ts: Date.now() })
+    return NextResponse.json({ questions: fileCached, cached: true })
+  }
+
+  // 4. Call Gemini -- deduplicated per sessionId so concurrent requests share one inflight
+  const inflightKey = sessionId || "global"
+  if (!inflightMap.has(inflightKey)) {
+    const promise = callGemini(apiKey)
+      .then((questions) => { writeCache(questions); return questions })
+      .finally(() => inflightMap.delete(inflightKey))
+    inflightMap.set(inflightKey, promise)
   }
 
   try {
-    const questions = await inflightPromise
+    const questions = await inflightMap.get(inflightKey)!
+    if (sessionId) SESSION_STORE.set(sessionId, { questions, ts: Date.now() })
+    if (address) ADDRESS_THROTTLE.set(address, Date.now())
     return NextResponse.json({ questions })
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)

@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useWallet } from "@txnlab/use-wallet-react"
 import { useRouter } from "next/navigation"
+import algosdk from "algosdk"
 import type { QuizQuestion } from "@/app/api/quiz/generate/route"
+import type { ExamReceipt } from "@/lib/algorand/certificate"
 
 const QUESTION_TIME = 60
 const MIN_EXAM_TIME = 300
@@ -35,7 +37,7 @@ function pct(n: number, total: number) {
 
 export default function QuizPage() {
   const router = useRouter()
-  const { activeAddress } = useWallet()
+  const { activeAddress, signTransactions } = useWallet()
 
   const [phase, setPhase] = useState<Phase>("stake")
   const [errorMsg, setErrorMsg] = useState("")
@@ -49,6 +51,12 @@ export default function QuizPage() {
   const [result, setResult] = useState<ExamResult | null>(null)
   const [cheatWarning, setCheatWarning] = useState(false)
   const [staking, setStaking] = useState(false)
+  const [examReceipt, setExamReceipt] = useState<ExamReceipt | null>(null)
+  const [claimStatus, setClaimStatus] = useState<"idle" | "opting-in" | "claiming" | "claimed" | "error">("idle")
+  const [claimError, setClaimError] = useState("")
+  const [receiptTxId, setReceiptTxId] = useState<string | null>(null)
+  const [receiptStatus, setReceiptStatus] = useState<"idle" | "signing" | "done" | "error">("idle")
+  const [receiptError, setReceiptError] = useState("")
 
   const answersRef = useRef<(number | null)[]>([])
   const cheatCountRef = useRef(0)
@@ -58,16 +66,21 @@ export default function QuizPage() {
   const finishingRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const phaseRef = useRef<Phase>("stake")
+  const sessionIdRef = useRef<string>("")
 
   useEffect(() => { phaseRef.current = phase }, [phase])
 
-  // Load questions from Gemini - only called on explicit user action
-  const loadQuestions = useCallback(async () => {
+  // Load questions -- sessionId scopes the server-side cache to one quiz attempt
+  const loadQuestions = useCallback(async (sessionId: string) => {
     setPhase("loading")
     setErrorMsg("")
     finishingRef.current = false
     try {
-      const res = await fetch("/api/quiz/generate", { method: "POST" })
+      const res = await fetch("/api/quiz/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, address: activeAddress ?? undefined }),
+      })
       const data = await res.json()
       if (!res.ok || !data.questions) throw new Error(data.error ?? "Failed to load questions")
       setQuestions(data.questions)
@@ -77,7 +90,7 @@ export default function QuizPage() {
       setErrorMsg(String(e))
       setPhase("error")
     }
-  }, [])
+  }, [activeAddress])
 
   // Grade and finish exam
   const finishExam = useCallback(async (finalAnswers: (number | null)[], cheats: number) => {
@@ -120,9 +133,12 @@ export default function QuizPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ student: activeAddress, marks: passed ? score : 0 }),
-      }).catch(() => { /* non-fatal */ })
+      })
+        .then((r) => r.json())
+        .then((data) => { if (data.receipt) setExamReceipt(data.receipt) })
+        .catch(() => { /* non-fatal */ })
     }
-  }, [activeAddress, loadQuestions])
+  }, [activeAddress])
 
   // Fullscreen enforcement
   const handleFullscreenChange = useCallback(() => {
@@ -143,12 +159,9 @@ export default function QuizPage() {
 
       if (newCount >= MAX_CHEATS) {
         finishExam(answersRef.current, newCount)
-      } else {
-        setTimeout(() => {
-          document.documentElement.requestFullscreen().catch(() => {})
-          setCheatWarning(false)
-        }, 3000)
       }
+      // Warning stays visible until user clicks the button below (browser requires
+      // a direct user gesture to call requestFullscreen).
     }
   }, [activeAddress, finishExam])
 
@@ -156,6 +169,14 @@ export default function QuizPage() {
     document.addEventListener("fullscreenchange", handleFullscreenChange)
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
   }, [handleFullscreenChange])
+
+  // Must be called from a click handler so the browser allows fullscreen
+  const returnToFullscreen = useCallback(async () => {
+    try {
+      await document.documentElement.requestFullscreen()
+    } catch { /* user may have denied */ }
+    setCheatWarning(false)
+  }, [])
 
   // Advance to the next question
   const advanceQuestion = useCallback((forcedAnswer?: number | null) => {
@@ -214,13 +235,91 @@ export default function QuizPage() {
     try { await document.documentElement.requestFullscreen() } catch { /* ok */ }
   }, [])
 
-  // Simulate stake then load questions
+  // Simulate stake then load questions -- fresh UUID per attempt prevents duplicate Gemini calls
   const handleStake = useCallback(async () => {
     if (!activeAddress) return
     setStaking(true)
+    sessionIdRef.current = crypto.randomUUID()
     await new Promise((r) => setTimeout(r, 1200))
-    await loadQuestions()
+    await loadQuestions(sessionIdRef.current)
   }, [activeAddress, loadQuestions])
+
+  const ALGOD_API = "https://testnet-api.4160.nodely.dev"
+
+  const handleSignReceipt = useCallback(async () => {
+    if (!activeAddress || !examReceipt || !signTransactions) return
+    setReceiptStatus("signing")
+    setReceiptError("")
+    try {
+      const algod = new algosdk.Algodv2("", ALGOD_API, 443)
+      const sp = await algod.getTransactionParams().do()
+      // Zero-ALGO self-payment — the note is the immutable on-chain receipt
+      const note = new TextEncoder().encode(
+        `GZCERT-RECEIPT|certId:${examReceipt.certId}` +
+        `|nft:${examReceipt.nftAssetId}` +
+        `|scholarship:${examReceipt.scholarshipTxId ?? "none"}` +
+        `|score:${examReceipt.score}%` +
+        `|ts:${examReceipt.timestamp}`
+      )
+      const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        sender: activeAddress,
+        receiver: activeAddress,
+        amount: 0,
+        note,
+        suggestedParams: sp,
+      })
+      const encoded = algosdk.encodeUnsignedTransaction(txn)
+      const signed = await signTransactions([[encoded]])
+      const signedTxn = signed[0]
+      if (!signedTxn) throw new Error("Wallet rejected")
+      await algod.sendRawTransaction(signedTxn).do()
+      await algosdk.waitForConfirmation(algod, txn.txID(), 4)
+      setReceiptTxId(txn.txID())
+      setReceiptStatus("done")
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setReceiptError(msg.toLowerCase().includes("reject") ? "Rejected in wallet." : msg)
+      setReceiptStatus("error")
+    }
+  }, [activeAddress, examReceipt, signTransactions])
+
+  const handleClaimCert = useCallback(async () => {
+    if (!activeAddress || !examReceipt || !signTransactions) return
+    setClaimStatus("opting-in")
+    setClaimError("")
+    try {
+      const algod = new algosdk.Algodv2("", ALGOD_API, 443)
+      const sp = await algod.getTransactionParams().do()
+      const optInTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+        sender: activeAddress,
+        receiver: activeAddress,
+        assetIndex: examReceipt.nftAssetId,
+        amount: 0,
+        suggestedParams: sp,
+      })
+      const encoded = algosdk.encodeUnsignedTransaction(optInTxn)
+      const signed = await signTransactions([[encoded]])
+      const signedTxn = signed[0]
+      if (!signedTxn) throw new Error("Wallet rejected opt-in")
+      await algod.sendRawTransaction(signedTxn).do()
+      await algosdk.waitForConfirmation(algod, optInTxn.txID(), 4)
+      setClaimStatus("claiming")
+      const res = await fetch("/api/quiz/claim-cert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student: activeAddress, nftAssetId: examReceipt.nftAssetId }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error ?? "Claim failed")
+      }
+      setClaimStatus("claimed")
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setClaimError(msg.toLowerCase().includes("reject") ? "Rejected in wallet." : msg)
+      setClaimStatus("error")
+    }
+  }, [activeAddress, examReceipt, signTransactions])
 
   const timerPct = (timeLeft / QUESTION_TIME) * 100
   const timerColor = timeLeft > 20 ? "#3b82f6" : timeLeft > 10 ? "#f59e0b" : "#ef4444"
@@ -240,7 +339,11 @@ export default function QuizPage() {
     <div className="flex min-h-screen items-center justify-center bg-black p-8 text-white">
       <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-8 text-center max-w-md w-full">
         <p className="font-mono text-sm text-red-400 mb-5">{errorMsg}</p>
-        <button onClick={loadQuestions} className="rounded-full bg-blue-600 px-6 py-2 font-sans text-sm text-white hover:bg-blue-500 transition-colors">
+        <button onClick={() => {
+          // Fresh session ID so the retry isn't served from the previous failed cache
+          sessionIdRef.current = crypto.randomUUID()
+          loadQuestions(sessionIdRef.current)
+        }} className="rounded-full bg-blue-600 px-6 py-2 font-sans text-sm text-white hover:bg-blue-500 transition-colors">
           Retry
         </button>
       </div>
@@ -362,9 +465,16 @@ export default function QuizPage() {
               <p className="font-sans text-sm text-white/60 mb-1">
                 Violation <span className="font-bold text-red-400">{cheatCount}</span> of {MAX_CHEATS}
               </p>
-              <p className="font-mono text-xs text-white/30 mt-3">
-                {cheatCount < MAX_CHEATS ? "Returning to fullscreen..." : "Exam terminated. Stake slashed."}
-              </p>
+              {cheatCount < MAX_CHEATS ? (
+                <button
+                  onClick={returnToFullscreen}
+                  className="mt-5 rounded-xl bg-red-600 px-6 py-2.5 font-sans text-sm font-semibold text-white hover:bg-red-500 transition-colors"
+                >
+                  Return to Fullscreen
+                </button>
+              ) : (
+                <p className="font-mono text-xs text-white/30 mt-3">Exam terminated. Stake slashed.</p>
+              )}
             </div>
           </div>
         )}
@@ -508,11 +618,96 @@ export default function QuizPage() {
             )}
           </div>
 
-          {result.passed && (
+          {result.passed && examReceipt && (
+            <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5 mb-4">
+              <p className="font-mono text-xs text-blue-400 uppercase tracking-widest mb-3 text-center">
+                NFT Certificate Minted On-Chain
+              </p>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs text-white/40">Cert ID</span>
+                  <span className="font-mono text-xs text-white/80">{examReceipt.certId}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs text-white/40">NFT Asset</span>
+                  <a
+                    href={`https://testnet.explorer.perawallet.app/assets/${examReceipt.nftAssetId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-xs text-blue-400 hover:underline"
+                  >
+                    #{examReceipt.nftAssetId}
+                  </a>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs text-white/40">Meta Hash</span>
+                  <span className="font-mono text-xs text-white/50 truncate max-w-[180px]">{examReceipt.metaHash.slice(0, 16)}...</span>
+                </div>
+                {examReceipt.scholarshipTxId && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs text-white/40">Scholarship Tx</span>
+                    <a
+                      href={`https://testnet.explorer.perawallet.app/tx/${examReceipt.scholarshipTxId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs text-emerald-400 hover:underline"
+                    >
+                      view &rarr;
+                    </a>
+                  </div>
+                )}
+                {receiptTxId ? (
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs text-white/40">Your Receipt Tx</span>
+                    <a
+                      href={`https://testnet.explorer.perawallet.app/tx/${receiptTxId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs text-emerald-400 hover:underline"
+                    >
+                      {receiptTxId.slice(0, 10)}... &rarr;
+                    </a>
+                  </div>
+                ) : examReceipt.scholarshipTxId && (
+                  <div className="pt-1">
+                    <button
+                      onClick={handleSignReceipt}
+                      disabled={receiptStatus === "signing"}
+                      className="w-full rounded-lg border border-emerald-500/30 bg-emerald-500/10 py-2 font-sans text-xs font-medium text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+                    >
+                      {receiptStatus === "signing" ? "Waiting for wallet..." : "Sign Scholarship Receipt"}
+                    </button>
+                    {receiptStatus === "error" && (
+                      <p className="mt-1.5 text-center font-sans text-xs text-red-400">{receiptError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              {examReceipt.nftClaimed ? (
+                <p className="text-center font-mono text-xs text-emerald-400">NFT delivered to your wallet</p>
+              ) : claimStatus === "claimed" ? (
+                <p className="text-center font-mono text-xs text-emerald-400">NFT claimed successfully!</p>
+              ) : (
+                <>
+                  <button
+                    onClick={handleClaimCert}
+                    disabled={claimStatus === "opting-in" || claimStatus === "claiming"}
+                    className="w-full rounded-xl bg-blue-600 py-2.5 font-sans text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
+                  >
+                    {claimStatus === "opting-in" ? "Approving opt-in..." : claimStatus === "claiming" ? "Transferring NFT..." : "Claim NFT Certificate"}
+                  </button>
+                  {claimStatus === "error" && (
+                    <p className="mt-2 text-center font-sans text-xs text-red-400">{claimError}</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+          {result.passed && !examReceipt && (
             <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5 mb-4 text-center">
               <p className="font-mono text-xs text-blue-400 uppercase tracking-widest mb-1">On-Chain Verification</p>
               <p className="font-sans text-sm text-white/60">
-                Your result is verified via Zero-Knowledge Proof. Scholarship disbursed to your connected wallet.
+                Scholarship disbursed to your connected wallet.
               </p>
             </div>
           )}

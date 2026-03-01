@@ -6,6 +6,8 @@ import { WorkSection } from "@/components/sections/work-section"
 import { ServicesSection } from "@/components/sections/services-section"
 import { AboutSection } from "@/components/sections/about-section"
 import { ContactSection } from "@/components/sections/contact-section"
+import { FaucetSection } from "@/components/sections/faucet-section"
+import { ShopSection } from "@/components/sections/shop-section"
 import { MagneticButton } from "@/components/magnetic-button"
 import { WalletConnectButton } from "@/components/wallet-connect-button"
 import { useRef, useEffect, useState } from "react"
@@ -81,7 +83,7 @@ export default function Home() {
       const deltaX = touchStartX.current - touchEndX
 
       if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
-        if (deltaY > 0 && currentSection < 4) {
+        if (deltaY > 0 && currentSection < 6) {
           scrollToSection(currentSection + 1)
         } else if (deltaY < 0 && currentSection > 0) {
           scrollToSection(currentSection - 1)
@@ -151,7 +153,7 @@ export default function Home() {
         const scrollLeft = scrollContainerRef.current.scrollLeft
         const newSection = Math.round(scrollLeft / sectionWidth)
 
-        if (newSection !== currentSection && newSection >= 0 && newSection <= 4) {
+        if (newSection !== currentSection && newSection >= 0 && newSection <= 6) {
           setCurrentSection(newSection)
         }
 
@@ -226,7 +228,7 @@ export default function Home() {
         </button>
 
         <div className="hidden items-center gap-8 md:flex">
-          {["Home", "Learn", "Loan", "Wallets", "About"].map((item, index) => (
+          {["Home", "Learn", "Scholarship", "Wallets", "Faucet", "Shop GZC", "About"].map((item, index) => (
             <button
               key={item}
               onClick={() => scrollToSection(index)}
@@ -301,6 +303,8 @@ export default function Home() {
         <WorkSection />
         <ServicesSection />
         <AboutSection scrollToSection={scrollToSection} />
+        <FaucetSection />
+        <ShopSection />
         <ContactSection />
       </div>
 

@@ -17,31 +17,31 @@ export function ServicesSection() {
           }`}
         >
           <h2 className="mb-2 font-sans text-5xl font-light tracking-tight text-foreground md:text-6xl lg:text-7xl">
-            Loan
+            Scholarship Protocol
           </h2>
-          <p className="font-mono text-sm text-foreground/60 md:text-base">/ How scholarship funding works</p>
+          <p className="font-mono text-sm text-foreground/60 md:text-base">/ How decentralized funding works</p>
         </div>
 
         <div className="grid gap-8 md:grid-cols-2 md:gap-x-16 md:gap-y-12 lg:gap-x-24">
           {[
             {
-              title: "Take the Quiz",
-              description: "Complete blockchain learning modules and pass the assessment to qualify for a scholarship",
+              title: "Stake & Prove",
+              description: "Stake GZC tokens and take a dynamic AI-generated assessment. Economic staking discourages dishonesty.",
               direction: "top",
             },
             {
-              title: "ZKP Eligibility Check",
-              description: "Upload your marksheet — Zero-Knowledge Proofs verify your eligibility without exposing private data",
+              title: "Proof-of-Human Validation",
+              description: "Behavioral timing analysis and embedded verification traps ensure genuine participation.",
               direction: "right",
             },
             {
-              title: "On-Chain Scholarship",
-              description: "Approved scholarships are disbursed directly via smart contracts, no intermediaries",
+              title: "On-Chain Certification",
+              description: "Successful candidates receive a tamper-proof NFT credential issued on Algorand.",
               direction: "left",
             },
             {
-              title: "Debt-Free Future",
-              description: "Removing financial barriers so every student can pursue education without the burden of debt",
+              title: "Trustless Educational Funding",
+              description: "Transparent, automated, and merit-driven capital access powered by blockchain infrastructure.",
               direction: "bottom",
             },
           ].map((service, i) => (

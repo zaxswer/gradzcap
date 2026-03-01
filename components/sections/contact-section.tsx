@@ -1,194 +1,135 @@
 "use client"
 
-import { Mail, MapPin } from "lucide-react"
 import { useReveal } from "@/hooks/use-reveal"
-import { useState, type FormEvent } from "react"
-import { MagneticButton } from "@/components/magnetic-button"
+
+const PILLARS = [
+  { label: "Proof-of-Knowledge", desc: "AI-generated assessments with behavioral trap detection" },
+  { label: "On-Chain Integrity", desc: "Every result, cheat, and certificate recorded on Algorand" },
+  { label: "Trustless Disbursement", desc: "Smart contracts transfer scholarships with zero intermediaries" },
+  { label: "NFT Credentials", desc: "Tamper-proof certificates with on-chain metadata hash" },
+]
 
 export function ContactSection() {
   const { ref, isVisible } = useReveal(0.3)
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.message) {
-      return
-    }
-
-    setIsSubmitting(true)
-
-    // Simulate form submission (replace with actual API call later)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    setIsSubmitting(false)
-    setSubmitSuccess(true)
-    setFormData({ name: "", email: "", message: "" })
-
-    // Reset success message after 5 seconds
-    setTimeout(() => setSubmitSuccess(false), 5000)
-  }
 
   return (
     <section
       ref={ref}
-      className="flex h-screen w-screen shrink-0 snap-start items-center px-4 pt-20 md:px-12 md:pt-0 lg:px-16"
+      className="flex h-screen w-screen shrink-0 snap-start items-center px-6 pt-20 md:px-12 md:pt-0 lg:px-16"
     >
       <div className="mx-auto w-full max-w-7xl">
-        <div className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:gap-16 lg:gap-24">
-          <div className="flex flex-col justify-center">
-            <div
-              className={`mb-6 transition-all duration-700 md:mb-12 ${
-                isVisible ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"
-              }`}
-            >
-              <h2 className="mb-2 font-sans text-4xl font-light leading-[1.05] tracking-tight text-foreground md:mb-3 md:text-7xl lg:text-8xl">
-                About
-                <br />
-                Us
-              </h2>
-              <p className="font-mono text-xs text-foreground/60 md:text-base">/ GradZCap</p>
-            </div>
+        {/* Header */}
+        <div
+          className={`mb-8 transition-all duration-700 md:mb-10 ${
+            isVisible ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"
+          }`}
+        >
+          <h2 className="mb-2 font-sans text-5xl font-light tracking-tight text-foreground md:text-6xl lg:text-7xl">
+            About
+          </h2>
+          <p className="font-mono text-sm text-foreground/60 md:text-base">/ GradZCap — Decentralized Scholarship Protocol</p>
+        </div>
 
+        <div className="grid gap-10 md:grid-cols-2 md:gap-x-16 lg:gap-x-24">
+          {/* Left — what we are */}
+          <div>
             <div
-              className={`mb-6 transition-all duration-700 md:mb-8 ${
-                isVisible ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"
+              className={`mb-6 transition-all duration-700 ${
+                isVisible ? "translate-x-0 opacity-100" : "-translate-x-16 opacity-0"
               }`}
               style={{ transitionDelay: "100ms" }}
             >
-              <p className="max-w-md text-sm leading-relaxed text-foreground/80 md:text-base">
-                GradZCap is a blockchain-powered scholarship platform built to relieve students from
-                financial strain and debt. We use Zero-Knowledge Proofs to verify academic eligibility
-                while keeping your data private. Pass our on-chain quizzes and earn real scholarships —
-                no loans, no debt.
+              <p className="text-sm leading-relaxed text-foreground/80 md:text-base">
+                GradZCap is a merit-driven, blockchain-native scholarship protocol built on Algorand.
+                Students stake GZC tokens, complete AI-generated assessments under behavioral-integrity
+                monitoring, and — upon passing — receive tamper-proof NFT credentials and automatic
+                scholarship disbursement via smart contract.
+              </p>
+              <p className="mt-4 text-sm leading-relaxed text-foreground/70 md:text-base">
+                No intermediaries. No paperwork. No debt. Every result is immutable, every payout
+                is trustless, and every credential is verifiable on-chain — permanently.
               </p>
             </div>
 
-            <div className="space-y-4 md:space-y-8">
-              <a
-                href="mailto:hello@gradzcap.io"
-                className={`group block transition-all duration-700 ${
-                  isVisible ? "translate-x-0 opacity-100" : "-translate-x-16 opacity-0"
-                }`}
-                style={{ transitionDelay: "200ms" }}
-              >
-                <div className="mb-1 flex items-center gap-2">
-                  <Mail className="h-3 w-3 text-foreground/60" />
-                  <span className="font-mono text-xs text-foreground/60">Email</span>
+            {/* Pillars */}
+            <div
+              className={`space-y-3 transition-all duration-700 ${
+                isVisible ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"
+              }`}
+              style={{ transitionDelay: "250ms" }}
+            >
+              {PILLARS.map((p, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="mt-1.5 h-1 w-4 shrink-0 bg-foreground/30" />
+                  <div>
+                    <span className="font-sans text-xs font-medium text-foreground/90">{p.label}</span>
+                    <span className="font-mono text-xs text-foreground/45"> — {p.desc}</span>
+                  </div>
                 </div>
-                <p className="text-base text-foreground transition-colors group-hover:text-foreground/70 md:text-xl">
-                  hello@gradzcap.io
-                </p>
-              </a>
-
-              <div
-                className={`transition-all duration-700 ${
-                  isVisible ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
-                }`}
-                style={{ transitionDelay: "350ms" }}
-              >
-                <div className="mb-1 flex items-center gap-2">
-                  <MapPin className="h-3 w-3 text-foreground/60" />
-                  <span className="font-mono text-xs text-foreground/60">Location</span>
-                </div>
-                <p className="text-base text-foreground md:text-2xl">India</p>
-              </div>
-
-              <div
-                className={`flex gap-2 pt-2 transition-all duration-700 md:pt-4 ${
-                  isVisible ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"
-                }`}
-                style={{ transitionDelay: "500ms" }}
-              >
-                {["Twitter", "GitHub", "LinkedIn", "Discord"].map((social, i) => (
-                  <a
-                    key={social}
-                    href="#"
-                    className="border-b border-transparent font-mono text-xs text-foreground/60 transition-all hover:border-foreground/60 hover:text-foreground/90"
-                  >
-                    {social}
-                  </a>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Right side - Minimal form */}
-          <div className="flex flex-col justify-center">
-            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-              <div
-                className={`transition-all duration-700 ${
-                  isVisible ? "translate-x-0 opacity-100" : "translate-x-16 opacity-0"
-                }`}
-                style={{ transitionDelay: "200ms" }}
+          {/* Right — built by */}
+          <div
+            className={`flex flex-col justify-between transition-all duration-700 ${
+              isVisible ? "translate-x-0 opacity-100" : "translate-x-16 opacity-0"
+            }`}
+            style={{ transitionDelay: "200ms" }}
+          >
+            {/* Team credit card */}
+            <div className="rounded-2xl border border-foreground/15 bg-foreground/[0.03] p-6 md:p-8">
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-foreground/40">Built by</p>
+              <a
+                href="https://expose.software"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group mb-4 block"
               >
-                <label className="mb-1 block font-mono text-xs text-foreground/60 md:mb-2">Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full border-b border-foreground/30 bg-transparent py-1.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-foreground/50 focus:outline-none md:py-2 md:text-base"
-                  placeholder="Your name"
-                />
-              </div>
+                <h3 className="font-sans text-3xl font-light text-foreground transition-opacity group-hover:opacity-70 md:text-4xl">
+                  Team EXPOSE
+                </h3>
+                <p className="font-mono text-xs text-foreground/40 transition-colors group-hover:text-foreground/70">
+                  expose.software ↗
+                </p>
+              </a>
 
-              <div
-                className={`transition-all duration-700 ${
-                  isVisible ? "translate-x-0 opacity-100" : "translate-x-16 opacity-0"
-                }`}
-                style={{ transitionDelay: "350ms" }}
-              >
-                <label className="mb-1 block font-mono text-xs text-foreground/60 md:mb-2">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  className="w-full border-b border-foreground/30 bg-transparent py-1.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-foreground/50 focus:outline-none md:py-2 md:text-base"
-                  placeholder="your@email.com"
-                />
-              </div>
+              <div className="mb-6 h-px w-full bg-foreground/10" />
 
-              <div
-                className={`transition-all duration-700 ${
-                  isVisible ? "translate-x-0 opacity-100" : "translate-x-16 opacity-0"
-                }`}
-                style={{ transitionDelay: "500ms" }}
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-foreground/40">Presented at</p>
+              <a
+                href="https://diversion.tech"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block"
               >
-                <label className="mb-1 block font-mono text-xs text-foreground/60 md:mb-2">Message</label>
-                <textarea
-                  rows={3}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  required
-                  className="w-full border-b border-foreground/30 bg-transparent py-1.5 text-sm text-foreground placeholder:text-foreground/40 focus:border-foreground/50 focus:outline-none md:py-2 md:text-base"
-                  placeholder="Tell us about your goals..."
-                />
-              </div>
+                <h3 className="font-sans text-2xl font-light text-foreground transition-opacity group-hover:opacity-70 md:text-3xl">
+                  Diversion 2026
+                </h3>
+                <p className="font-mono text-xs text-foreground/40 transition-colors group-hover:text-foreground/70">
+                  diversion.tech ↗
+                </p>
+              </a>
+            </div>
 
-              <div
-                className={`transition-all duration-700 ${
-                  isVisible ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
-                }`}
-                style={{ transitionDelay: "650ms" }}
-              >
-                <MagneticButton
-                  variant="primary"
-                  size="lg"
-                  className="w-full disabled:opacity-50"
-                  onClick={isSubmitting ? undefined : undefined}
-                >
-                  {isSubmitting ? "Sending..." : "Send Message"}
-                </MagneticButton>
-                {submitSuccess && (
-                  <p className="mt-3 text-center font-mono text-sm text-foreground/80">Message sent successfully!</p>
-                )}
+            {/* Stack note */}
+            <div
+              className={`mt-5 transition-all duration-700 ${
+                isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+              }`}
+              style={{ transitionDelay: "450ms" }}
+            >
+              <div className="inline-flex flex-wrap gap-2">
+                {["Algorand", "AVM Smart Contracts", "AlgoKit", "Next.js 15", "Gemini AI", "GZC ASA"].map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-foreground/15 bg-foreground/[0.04] px-3 py-1 font-mono text-[10px] text-foreground/55"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>

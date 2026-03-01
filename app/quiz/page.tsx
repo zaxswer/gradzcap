@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useWallet } from "@txnlab/use-wallet-react"
 import { useRouter } from "next/navigation"
+import algosdk from "algosdk"
 import type { QuizQuestion } from "@/app/api/quiz/generate/route"
+import type { ExamReceipt } from "@/lib/algorand/certificate"
 
 const QUESTION_TIME = 60
 const MIN_EXAM_TIME = 300
@@ -68,6 +70,7 @@ export default function QuizPage() {
   const [stakeMsg, setStakeMsg] = useState("")
   const [gzcBalance, setGzcBalance] = useState<number | null>(null)
   const [balanceLoading, setBalanceLoading] = useState(false)
+  const [examReceipt, setExamReceipt] = useState<ExamReceipt | null>(null)
 
   const answersRef = useRef<(number | null)[]>([])
   const cheatCountRef = useRef(0)
@@ -77,16 +80,21 @@ export default function QuizPage() {
   const finishingRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const phaseRef = useRef<Phase>("stake")
+  const sessionIdRef = useRef<string>("")
 
   useEffect(() => { phaseRef.current = phase }, [phase])
 
-  // Load questions from Gemini - only called on explicit user action
-  const loadQuestions = useCallback(async () => {
+  // Load questions -- sessionId scopes the server-side cache to one quiz attempt
+  const loadQuestions = useCallback(async (sessionId: string) => {
     setPhase("loading")
     setErrorMsg("")
     finishingRef.current = false
     try {
-      const res = await fetch("/api/quiz/generate", { method: "POST" })
+      const res = await fetch("/api/quiz/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, address: activeAddress ?? undefined }),
+      })
       const data = await res.json()
       if (!res.ok || !data.questions) throw new Error(data.error ?? "Failed to load questions")
       setQuestions(data.questions)
@@ -96,7 +104,7 @@ export default function QuizPage() {
       setErrorMsg(String(e))
       setPhase("error")
     }
-  }, [])
+  }, [activeAddress])
 
   // Grade and finish exam
   const finishExam = useCallback(async (finalAnswers: (number | null)[], cheats: number) => {
@@ -183,8 +191,18 @@ export default function QuizPage() {
       } catch (e) {
         console.error("Stake resolution error:", e)
       }
+
+      // Also record on contract (non-fatal)
+      fetch("/api/quiz/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student: activeAddress, marks: passed ? score : 0 }),
+      })
+        .then((r) => r.json())
+        .then((data) => { if (data.receipt) setExamReceipt(data.receipt) })
+        .catch(() => { /* non-fatal */ })
     }
-  }, [activeAddress, loadQuestions])
+  }, [activeAddress])
 
   // Fullscreen enforcement
   const handleFullscreenChange = useCallback(() => {
@@ -205,12 +223,9 @@ export default function QuizPage() {
 
       if (newCount >= MAX_CHEATS) {
         finishExam(answersRef.current, newCount)
-      } else {
-        setTimeout(() => {
-          document.documentElement.requestFullscreen().catch(() => {})
-          setCheatWarning(false)
-        }, 3000)
       }
+      // Warning stays visible until user clicks the button below (browser requires
+      // a direct user gesture to call requestFullscreen).
     }
   }, [activeAddress, finishExam])
 
@@ -218,6 +233,14 @@ export default function QuizPage() {
     document.addEventListener("fullscreenchange", handleFullscreenChange)
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
   }, [handleFullscreenChange])
+
+  // Must be called from a click handler so the browser allows fullscreen
+  const returnToFullscreen = useCallback(async () => {
+    try {
+      await document.documentElement.requestFullscreen()
+    } catch { /* user may have denied */ }
+    setCheatWarning(false)
+  }, [])
 
   // Advance to the next question
   const advanceQuestion = useCallback((forcedAnswer?: number | null) => {
@@ -372,7 +395,8 @@ export default function QuizPage() {
       window.dispatchEvent(new Event("gzc-balance-changed"))
 
       // Step 5: Load questions
-      await loadQuestions()
+      sessionIdRef.current = crypto.randomUUID()
+      await loadQuestions(sessionIdRef.current)
     } catch (err: any) {
       console.error("Stake error:", err)
       const msg = err.message || ""
@@ -407,7 +431,11 @@ export default function QuizPage() {
     <div className="flex min-h-screen items-center justify-center bg-black p-8 text-white">
       <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-8 text-center max-w-md w-full">
         <p className="font-mono text-sm text-red-400 mb-5">{errorMsg}</p>
-        <button onClick={loadQuestions} className="rounded-full bg-blue-600 px-6 py-2 font-sans text-sm text-white hover:bg-blue-500 transition-colors">
+        <button onClick={() => {
+          // Fresh session ID so the retry isn't served from the previous failed cache
+          sessionIdRef.current = crypto.randomUUID()
+          loadQuestions(sessionIdRef.current)
+        }} className="rounded-full bg-blue-600 px-6 py-2 font-sans text-sm text-white hover:bg-blue-500 transition-colors">
           Retry
         </button>
       </div>
@@ -576,9 +604,16 @@ export default function QuizPage() {
               <p className="font-sans text-sm text-white/60 mb-1">
                 Violation <span className="font-bold text-red-400">{cheatCount}</span> of {MAX_CHEATS}
               </p>
-              <p className="font-mono text-xs text-white/30 mt-3">
-                {cheatCount < MAX_CHEATS ? "Returning to fullscreen..." : "Exam terminated. Stake slashed."}
-              </p>
+              {cheatCount < MAX_CHEATS ? (
+                <button
+                  onClick={returnToFullscreen}
+                  className="mt-5 rounded-xl bg-red-600 px-6 py-2.5 font-sans text-sm font-semibold text-white hover:bg-red-500 transition-colors"
+                >
+                  Return to Fullscreen
+                </button>
+              ) : (
+                <p className="font-mono text-xs text-white/30 mt-3">Exam terminated. Stake slashed.</p>
+              )}
             </div>
           </div>
         )}

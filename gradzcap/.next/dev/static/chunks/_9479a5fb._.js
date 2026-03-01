@@ -93,6 +93,34 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$hooks$2f$use$2d$reveal$2e$ts
 var _s = __turbopack_context__.k.signature();
 "use client";
 ;
+const MODULES = [
+    {
+        number: "01",
+        title: "Blockchain Fundamentals",
+        category: "Core Infrastructure Module",
+        bullets: [
+            "Decentralization principles",
+            "Wallet architecture",
+            "Consensus mechanisms",
+            "Smart contract basics"
+        ],
+        positioning: "Build the technical foundation required to participate in stake-based, on-chain verification systems.",
+        direction: "left"
+    },
+    {
+        number: "02",
+        title: "Linux Fundamentals",
+        category: "System Control Module",
+        bullets: [
+            "Command-line proficiency",
+            "File system management",
+            "Process control",
+            "Server-side logic execution"
+        ],
+        positioning: "Develop operational competence for secure system interaction and decentralized infrastructure deployment.",
+        direction: "right"
+    }
+];
 function WorkSection() {
     _s();
     const { ref, isVisible } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$hooks$2f$use$2d$reveal$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useReveal"])(0.3);
@@ -103,77 +131,101 @@ function WorkSection() {
             className: "mx-auto w-full max-w-7xl",
             children: [
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: `mb-12 transition-all duration-700 md:mb-16 ${isVisible ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"}`,
+                    className: `mb-10 transition-all duration-700 md:mb-12 ${isVisible ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"}`,
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
                             className: "mb-2 font-sans text-5xl font-light tracking-tight text-foreground md:text-6xl lg:text-7xl",
                             children: "Learn"
                         }, void 0, false, {
                             fileName: "[project]/components/sections/work-section.tsx",
-                            lineNumber: 19,
+                            lineNumber: 48,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                             className: "font-mono text-sm text-foreground/60 md:text-base",
-                            children: "/ Blockchain learning modules"
+                            children: "/ Foundational Infrastructure Layer"
                         }, void 0, false, {
                             fileName: "[project]/components/sections/work-section.tsx",
-                            lineNumber: 22,
+                            lineNumber: 51,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/sections/work-section.tsx",
-                    lineNumber: 14,
+                    lineNumber: 43,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "space-y-6 md:space-y-8",
-                    children: [
-                        {
-                            number: "01",
-                            title: "Blockchain Fundamentals",
-                            category: "Core Module",
-                            year: "Quiz",
-                            direction: "left"
-                        },
-                        {
-                            number: "02",
-                            title: "DeFi & Smart Contracts",
-                            category: "Advanced Module",
-                            year: "Quiz",
-                            direction: "right"
-                        },
-                        {
-                            number: "03",
-                            title: "Zero-Knowledge Proofs",
-                            category: "Expert Module",
-                            year: "Quiz",
-                            direction: "left"
-                        }
-                    ].map((project, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(ProjectCard, {
-                            project: project,
+                    className: "grid gap-8 md:grid-cols-2 md:gap-x-16 lg:gap-x-24",
+                    children: MODULES.map((mod, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(ModuleCard, {
+                            mod: mod,
                             index: i,
                             isVisible: isVisible
                         }, i, false, {
                             fileName: "[project]/components/sections/work-section.tsx",
-                            lineNumber: 49,
+                            lineNumber: 56,
                             columnNumber: 13
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/components/sections/work-section.tsx",
-                    lineNumber: 25,
+                    lineNumber: 54,
+                    columnNumber: 9
+                }, this),
+                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    className: `mt-8 transition-all duration-700 md:mt-10 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`,
+                    style: {
+                        transitionDelay: "500ms"
+                    },
+                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "inline-flex items-center gap-3 rounded-full border border-foreground/15 bg-foreground/[0.04] px-5 py-2.5",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "h-1.5 w-1.5 rounded-full bg-foreground/40"
+                            }, void 0, false, {
+                                fileName: "[project]/components/sections/work-section.tsx",
+                                lineNumber: 68,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "font-mono text-xs text-foreground/60 md:text-sm",
+                                children: [
+                                    "Completion of foundational modules qualifies learners to attempt the",
+                                    " ",
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "text-foreground/90",
+                                        children: "Proof-of-Knowledge Assessment Protocol"
+                                    }, void 0, false, {
+                                        fileName: "[project]/components/sections/work-section.tsx",
+                                        lineNumber: 71,
+                                        columnNumber: 15
+                                    }, this),
+                                    "."
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/components/sections/work-section.tsx",
+                                lineNumber: 69,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/components/sections/work-section.tsx",
+                        lineNumber: 67,
+                        columnNumber: 11
+                    }, this)
+                }, void 0, false, {
+                    fileName: "[project]/components/sections/work-section.tsx",
+                    lineNumber: 61,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/components/sections/work-section.tsx",
-            lineNumber: 13,
+            lineNumber: 42,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/components/sections/work-section.tsx",
-        lineNumber: 9,
+        lineNumber: 38,
         columnNumber: 5
     }, this);
 }
@@ -183,81 +235,104 @@ _s(WorkSection, "ee2EZaw9NeA/o3wgHstTFxOHyVw=", false, function() {
     ];
 });
 _c = WorkSection;
-function ProjectCard({ project, index, isVisible }) {
-    const getRevealClass = ()=>{
-        if (!isVisible) {
-            return project.direction === "left" ? "-translate-x-16 opacity-0" : "translate-x-16 opacity-0";
-        }
-        return "translate-x-0 opacity-100";
-    };
+function ModuleCard({ mod, index, isVisible }) {
+    const revealClass = isVisible ? "translate-x-0 opacity-100" : mod.direction === "left" ? "-translate-x-16 opacity-0" : "translate-x-16 opacity-0";
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: `group flex items-center justify-between border-b border-foreground/10 py-6 transition-all duration-700 hover:border-foreground/20 md:py-8 ${getRevealClass()}`,
+        className: `group border-b border-foreground/10 pb-6 transition-all duration-700 hover:border-foreground/20 md:pb-8 ${revealClass}`,
         style: {
-            transitionDelay: `${index * 150}ms`,
-            marginLeft: index % 2 === 0 ? "0" : "auto",
-            maxWidth: index % 2 === 0 ? "85%" : "90%"
+            transitionDelay: `${index * 150}ms`
         },
-        children: [
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+            className: "flex items-start justify-between gap-4",
+            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "flex items-baseline gap-4 md:gap-8",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                        className: "font-mono text-sm text-foreground/30 transition-colors group-hover:text-foreground/50 md:text-base",
-                        children: project.number
+                        className: "mt-1 font-mono text-sm text-foreground/30 transition-colors group-hover:text-foreground/50 md:text-base",
+                        children: mod.number
                     }, void 0, false, {
                         fileName: "[project]/components/sections/work-section.tsx",
-                        lineNumber: 83,
-                        columnNumber: 9
+                        lineNumber: 102,
+                        columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
-                                className: "mb-1 font-sans text-2xl font-light text-foreground transition-transform duration-300 group-hover:translate-x-2 md:text-3xl lg:text-4xl",
-                                children: project.title
+                                className: "mb-0.5 font-sans text-2xl font-light text-foreground transition-transform duration-300 group-hover:translate-x-2 md:text-3xl lg:text-4xl",
+                                children: mod.title
                             }, void 0, false, {
                                 fileName: "[project]/components/sections/work-section.tsx",
-                                lineNumber: 87,
-                                columnNumber: 11
+                                lineNumber: 106,
+                                columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                className: "font-mono text-xs text-foreground/50 md:text-sm",
-                                children: project.category
+                                className: "mb-3 font-mono text-xs text-foreground/50 md:text-sm",
+                                children: mod.category
                             }, void 0, false, {
                                 fileName: "[project]/components/sections/work-section.tsx",
-                                lineNumber: 90,
-                                columnNumber: 11
+                                lineNumber: 109,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
+                                className: "mb-3 space-y-1",
+                                children: mod.bullets.map((b)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                        className: "flex items-center gap-2 font-mono text-xs text-foreground/55",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                className: "text-foreground/30",
+                                                children: "—"
+                                            }, void 0, false, {
+                                                fileName: "[project]/components/sections/work-section.tsx",
+                                                lineNumber: 113,
+                                                columnNumber: 19
+                                            }, this),
+                                            b
+                                        ]
+                                    }, b, true, {
+                                        fileName: "[project]/components/sections/work-section.tsx",
+                                        lineNumber: 112,
+                                        columnNumber: 17
+                                    }, this))
+                            }, void 0, false, {
+                                fileName: "[project]/components/sections/work-section.tsx",
+                                lineNumber: 110,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "max-w-sm font-sans text-xs italic text-foreground/45 md:text-sm",
+                                children: mod.positioning
+                            }, void 0, false, {
+                                fileName: "[project]/components/sections/work-section.tsx",
+                                lineNumber: 117,
+                                columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/sections/work-section.tsx",
-                        lineNumber: 86,
-                        columnNumber: 9
+                        lineNumber: 105,
+                        columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/sections/work-section.tsx",
-                lineNumber: 82,
-                columnNumber: 7
-            }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                className: "font-mono text-xs text-foreground/30 md:text-sm",
-                children: project.year
-            }, void 0, false, {
-                fileName: "[project]/components/sections/work-section.tsx",
-                lineNumber: 93,
-                columnNumber: 7
+                lineNumber: 101,
+                columnNumber: 9
             }, this)
-        ]
-    }, void 0, true, {
+        }, void 0, false, {
+            fileName: "[project]/components/sections/work-section.tsx",
+            lineNumber: 100,
+            columnNumber: 7
+        }, this)
+    }, void 0, false, {
         fileName: "[project]/components/sections/work-section.tsx",
-        lineNumber: 74,
+        lineNumber: 96,
         columnNumber: 5
     }, this);
 }
-_c1 = ProjectCard;
+_c1 = ModuleCard;
 var _c, _c1;
 __turbopack_context__.k.register(_c, "WorkSection");
-__turbopack_context__.k.register(_c1, "ProjectCard");
+__turbopack_context__.k.register(_c1, "ModuleCard");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
 }
@@ -289,7 +364,7 @@ function ServicesSection() {
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h2", {
                             className: "mb-2 font-sans text-5xl font-light tracking-tight text-foreground md:text-6xl lg:text-7xl",
-                            children: "Loan"
+                            children: "Scholarship Protocol"
                         }, void 0, false, {
                             fileName: "[project]/components/sections/services-section.tsx",
                             lineNumber: 19,
@@ -297,7 +372,7 @@ function ServicesSection() {
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                             className: "font-mono text-sm text-foreground/60 md:text-base",
-                            children: "/ How scholarship funding works"
+                            children: "/ How decentralized funding works"
                         }, void 0, false, {
                             fileName: "[project]/components/sections/services-section.tsx",
                             lineNumber: 22,
@@ -313,23 +388,23 @@ function ServicesSection() {
                     className: "grid gap-8 md:grid-cols-2 md:gap-x-16 md:gap-y-12 lg:gap-x-24",
                     children: [
                         {
-                            title: "Take the Quiz",
-                            description: "Complete blockchain learning modules and pass the assessment to qualify for a scholarship",
+                            title: "Stake & Prove",
+                            description: "Stake GZC tokens and take a dynamic AI-generated assessment. Economic staking discourages dishonesty.",
                             direction: "top"
                         },
                         {
-                            title: "ZKP Eligibility Check",
-                            description: "Upload your marksheet — Zero-Knowledge Proofs verify your eligibility without exposing private data",
+                            title: "Proof-of-Human Validation",
+                            description: "Behavioral timing analysis and embedded verification traps ensure genuine participation.",
                             direction: "right"
                         },
                         {
-                            title: "On-Chain Scholarship",
-                            description: "Approved scholarships are disbursed directly via smart contracts, no intermediaries",
+                            title: "On-Chain Certification",
+                            description: "Successful candidates receive a tamper-proof NFT credential issued on Algorand.",
                             direction: "left"
                         },
                         {
-                            title: "Debt-Free Future",
-                            description: "Removing financial barriers so every student can pursue education without the burden of debt",
+                            title: "Trustless Educational Funding",
+                            description: "Transparent, automated, and merit-driven capital access powered by blockchain infrastructure.",
                             direction: "bottom"
                         }
                     ].map((service, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(ServiceCard, {
@@ -1342,7 +1417,9 @@ function WalletConnectButton() {
                     encoded
                 ]
             ]);
-            await algod.sendRawTransaction(signed[0]).do();
+            const signedTxn = signed[0];
+            if (!signedTxn) throw new Error("Wallet did not return a signed transaction.");
+            await algod.sendRawTransaction(signedTxn).do();
             await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$algosdk$2f$dist$2f$esm$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"].waitForConfirmation(algod, optInTxn.txID(), 4);
             await fetchBalance(activeAddress);
         } catch (e) {
@@ -1370,12 +1447,12 @@ function WalletConnectButton() {
                         d: "M12 4v16m8-8H4"
                     }, void 0, false, {
                         fileName: "[project]/components/wallet-connect-button.tsx",
-                        lineNumber: 129,
+                        lineNumber: 131,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/components/wallet-connect-button.tsx",
-                    lineNumber: 128,
+                    lineNumber: 130,
                     columnNumber: 11
                 }, this)
             },
@@ -1394,12 +1471,12 @@ function WalletConnectButton() {
                         d: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     }, void 0, false, {
                         fileName: "[project]/components/wallet-connect-button.tsx",
-                        lineNumber: 138,
+                        lineNumber: 140,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/components/wallet-connect-button.tsx",
-                    lineNumber: 137,
+                    lineNumber: 139,
                     columnNumber: 11
                 }, this)
             },
@@ -1418,12 +1495,12 @@ function WalletConnectButton() {
                         d: "M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                     }, void 0, false, {
                         fileName: "[project]/components/wallet-connect-button.tsx",
-                        lineNumber: 147,
+                        lineNumber: 149,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/components/wallet-connect-button.tsx",
-                    lineNumber: 146,
+                    lineNumber: 148,
                     columnNumber: 11
                 }, this)
             }
@@ -1440,7 +1517,7 @@ function WalletConnectButton() {
                             children: "GZC Token not in your wallet"
                         }, void 0, false, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 158,
+                            lineNumber: 160,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1452,7 +1529,7 @@ function WalletConnectButton() {
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 159,
+                            lineNumber: 161,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1462,7 +1539,7 @@ function WalletConnectButton() {
                             children: optingIn ? "Adding to wallet..." : "Add GZC Token"
                         }, void 0, false, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 162,
+                            lineNumber: 164,
                             columnNumber: 13
                         }, this),
                         optInError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1470,13 +1547,13 @@ function WalletConnectButton() {
                             children: optInError
                         }, void 0, false, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 169,
+                            lineNumber: 171,
                             columnNumber: 28
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/wallet-connect-button.tsx",
-                    lineNumber: 157,
+                    lineNumber: 159,
                     columnNumber: 11
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1487,7 +1564,7 @@ function WalletConnectButton() {
                             className: `h-1.5 w-1.5 rounded-full ${isOptedIn ? "bg-emerald-400" : "bg-amber-400"}`
                         }, void 0, false, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 177,
+                            lineNumber: 179,
                             columnNumber: 11
                         }, this),
                         truncate(activeAddress),
@@ -1503,18 +1580,18 @@ function WalletConnectButton() {
                                 d: "M19 9l-7 7-7-7"
                             }, void 0, false, {
                                 fileName: "[project]/components/wallet-connect-button.tsx",
-                                lineNumber: 180,
+                                lineNumber: 182,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 179,
+                            lineNumber: 181,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/wallet-connect-button.tsx",
-                    lineNumber: 173,
+                    lineNumber: 175,
                     columnNumber: 9
                 }, this),
                 open && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1533,13 +1610,13 @@ function WalletConnectButton() {
                                             className: "h-5 w-5 rounded-sm"
                                         }, void 0, false, {
                                             fileName: "[project]/components/wallet-connect-button.tsx",
-                                            lineNumber: 190,
+                                            lineNumber: 192,
                                             columnNumber: 19
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             className: "h-5 w-5 rounded-full bg-foreground/20"
                                         }, void 0, false, {
                                             fileName: "[project]/components/wallet-connect-button.tsx",
-                                            lineNumber: 192,
+                                            lineNumber: 194,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1547,13 +1624,13 @@ function WalletConnectButton() {
                                             children: activeWallet?.metadata.name ?? "Wallet"
                                         }, void 0, false, {
                                             fileName: "[project]/components/wallet-connect-button.tsx",
-                                            lineNumber: 194,
+                                            lineNumber: 196,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/wallet-connect-button.tsx",
-                                    lineNumber: 187,
+                                    lineNumber: 189,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1571,23 +1648,23 @@ function WalletConnectButton() {
                                             d: "M6 18L18 6M6 6l12 12"
                                         }, void 0, false, {
                                             fileName: "[project]/components/wallet-connect-button.tsx",
-                                            lineNumber: 198,
+                                            lineNumber: 200,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/wallet-connect-button.tsx",
-                                        lineNumber: 197,
+                                        lineNumber: 199,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/components/wallet-connect-button.tsx",
-                                    lineNumber: 196,
+                                    lineNumber: 198,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 186,
+                            lineNumber: 188,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1597,7 +1674,7 @@ function WalletConnectButton() {
                                     className: "h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 mb-1 shadow-lg"
                                 }, void 0, false, {
                                     fileName: "[project]/components/wallet-connect-button.tsx",
-                                    lineNumber: 205,
+                                    lineNumber: 207,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1605,7 +1682,7 @@ function WalletConnectButton() {
                                     children: truncate(activeAddress)
                                 }, void 0, false, {
                                     fileName: "[project]/components/wallet-connect-button.tsx",
-                                    lineNumber: 206,
+                                    lineNumber: 208,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1615,7 +1692,7 @@ function WalletConnectButton() {
                                         children: "loading..."
                                     }, void 0, false, {
                                         fileName: "[project]/components/wallet-connect-button.tsx",
-                                        lineNumber: 209,
+                                        lineNumber: 211,
                                         columnNumber: 19
                                     }, this) : isOptedIn && gzcBalance !== null ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                         children: [
@@ -1626,7 +1703,7 @@ function WalletConnectButton() {
                                                 children: "GZC"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/wallet-connect-button.tsx",
-                                                lineNumber: 211,
+                                                lineNumber: 213,
                                                 columnNumber: 45
                                             }, this)
                                         ]
@@ -1635,12 +1712,12 @@ function WalletConnectButton() {
                                         children: "GZC not added"
                                     }, void 0, false, {
                                         fileName: "[project]/components/wallet-connect-button.tsx",
-                                        lineNumber: 213,
+                                        lineNumber: 215,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/components/wallet-connect-button.tsx",
-                                    lineNumber: 207,
+                                    lineNumber: 209,
                                     columnNumber: 15
                                 }, this),
                                 !isOptedIn && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1650,7 +1727,7 @@ function WalletConnectButton() {
                                     children: optingIn ? "Adding..." : "+ Add GZC Token"
                                 }, void 0, false, {
                                     fileName: "[project]/components/wallet-connect-button.tsx",
-                                    lineNumber: 217,
+                                    lineNumber: 219,
                                     columnNumber: 17
                                 }, this),
                                 optInError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1658,13 +1735,13 @@ function WalletConnectButton() {
                                     children: optInError
                                 }, void 0, false, {
                                     fileName: "[project]/components/wallet-connect-button.tsx",
-                                    lineNumber: 225,
+                                    lineNumber: 227,
                                     columnNumber: 30
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 204,
+                            lineNumber: 206,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1680,7 +1757,7 @@ function WalletConnectButton() {
                                             children: item.icon
                                         }, void 0, false, {
                                             fileName: "[project]/components/wallet-connect-button.tsx",
-                                            lineNumber: 237,
+                                            lineNumber: 239,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1688,7 +1765,7 @@ function WalletConnectButton() {
                                             children: item.label
                                         }, void 0, false, {
                                             fileName: "[project]/components/wallet-connect-button.tsx",
-                                            lineNumber: 238,
+                                            lineNumber: 240,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
@@ -1703,23 +1780,23 @@ function WalletConnectButton() {
                                                 d: "M9 5l7 7-7 7"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/wallet-connect-button.tsx",
-                                                lineNumber: 240,
+                                                lineNumber: 242,
                                                 columnNumber: 21
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/components/wallet-connect-button.tsx",
-                                            lineNumber: 239,
+                                            lineNumber: 241,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, item.label, true, {
                                     fileName: "[project]/components/wallet-connect-button.tsx",
-                                    lineNumber: 230,
+                                    lineNumber: 232,
                                     columnNumber: 17
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 228,
+                            lineNumber: 230,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1740,12 +1817,12 @@ function WalletConnectButton() {
                                             d: "M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                                         }, void 0, false, {
                                             fileName: "[project]/components/wallet-connect-button.tsx",
-                                            lineNumber: 252,
+                                            lineNumber: 254,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/wallet-connect-button.tsx",
-                                        lineNumber: 251,
+                                        lineNumber: 253,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1753,30 +1830,30 @@ function WalletConnectButton() {
                                         children: "Disconnect"
                                     }, void 0, false, {
                                         fileName: "[project]/components/wallet-connect-button.tsx",
-                                        lineNumber: 254,
+                                        lineNumber: 256,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/wallet-connect-button.tsx",
-                                lineNumber: 247,
+                                lineNumber: 249,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 246,
+                            lineNumber: 248,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/wallet-connect-button.tsx",
-                    lineNumber: 185,
+                    lineNumber: 187,
                     columnNumber: 11
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/components/wallet-connect-button.tsx",
-            lineNumber: 154,
+            lineNumber: 156,
             columnNumber: 7
         }, this);
     }
@@ -1798,7 +1875,7 @@ function WalletConnectButton() {
                             strokeWidth: "4"
                         }, void 0, false, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 267,
+                            lineNumber: 269,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
@@ -1807,20 +1884,20 @@ function WalletConnectButton() {
                             d: "M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                         }, void 0, false, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 268,
+                            lineNumber: 270,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/wallet-connect-button.tsx",
-                    lineNumber: 266,
+                    lineNumber: 268,
                     columnNumber: 9
                 }, this),
                 "Connecting..."
             ]
         }, void 0, true, {
             fileName: "[project]/components/wallet-connect-button.tsx",
-            lineNumber: 265,
+            lineNumber: 267,
             columnNumber: 7
         }, this);
     }
@@ -1834,7 +1911,7 @@ function WalletConnectButton() {
                 children: "Connect Wallet"
             }, void 0, false, {
                 fileName: "[project]/components/wallet-connect-button.tsx",
-                lineNumber: 277,
+                lineNumber: 279,
                 columnNumber: 7
             }, this),
             showWallets && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1845,7 +1922,7 @@ function WalletConnectButton() {
                         children: "Select wallet"
                     }, void 0, false, {
                         fileName: "[project]/components/wallet-connect-button.tsx",
-                        lineNumber: 286,
+                        lineNumber: 288,
                         columnNumber: 11
                     }, this),
                     wallets.map((wallet)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1859,26 +1936,26 @@ function WalletConnectButton() {
                                     className: "h-5 w-5 rounded-sm"
                                 }, void 0, false, {
                                     fileName: "[project]/components/wallet-connect-button.tsx",
-                                    lineNumber: 297,
+                                    lineNumber: 299,
                                     columnNumber: 17
                                 }, this),
                                 wallet.metadata.name
                             ]
                         }, wallet.id, true, {
                             fileName: "[project]/components/wallet-connect-button.tsx",
-                            lineNumber: 290,
+                            lineNumber: 292,
                             columnNumber: 13
                         }, this))
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/wallet-connect-button.tsx",
-                lineNumber: 285,
+                lineNumber: 287,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/wallet-connect-button.tsx",
-        lineNumber: 276,
+        lineNumber: 278,
         columnNumber: 5
     }, this);
 }

@@ -9,7 +9,7 @@ import type { ExamReceipt } from "@/lib/algorand/certificate"
 
 const QUESTION_TIME = 60
 const MIN_EXAM_TIME = 300
-const STAKE_AMOUNT = 900
+const STAKE_AMOUNT = 10_000
 const MAX_CHEATS = 3
 const PASS_SCORE = 80
 
@@ -37,7 +37,23 @@ function pct(n: number, total: number) {
 
 export default function QuizPage() {
   const router = useRouter()
-  const { activeAddress, signTransactions } = useWallet()
+  const { activeAddress, signTransactions, wallets } = useWallet()
+
+  // Wrapper: if signTransactions fails with "not been authorized", reconnect and retry
+  const signWithRetry = useCallback(async (txns: Uint8Array[]) => {
+    try {
+      return await signTransactions(txns)
+    } catch (err: any) {
+      if (err?.message?.includes("not been authorized")) {
+        const wallet = wallets.find((w) => w.isActive) || wallets.find((w) => w.isConnected)
+        if (wallet) {
+          await wallet.connect()
+          return await signTransactions(txns)
+        }
+      }
+      throw err
+    }
+  }, [signTransactions, wallets])
 
   const [phase, setPhase] = useState<Phase>("stake")
   const [errorMsg, setErrorMsg] = useState("")
@@ -51,12 +67,9 @@ export default function QuizPage() {
   const [result, setResult] = useState<ExamResult | null>(null)
   const [cheatWarning, setCheatWarning] = useState(false)
   const [staking, setStaking] = useState(false)
-  const [examReceipt, setExamReceipt] = useState<ExamReceipt | null>(null)
-  const [claimStatus, setClaimStatus] = useState<"idle" | "opting-in" | "claiming" | "claimed" | "error">("idle")
-  const [claimError, setClaimError] = useState("")
-  const [receiptTxId, setReceiptTxId] = useState<string | null>(null)
-  const [receiptStatus, setReceiptStatus] = useState<"idle" | "signing" | "done" | "error">("idle")
-  const [receiptError, setReceiptError] = useState("")
+  const [stakeMsg, setStakeMsg] = useState("")
+  const [gzcBalance, setGzcBalance] = useState<number | null>(null)
+  const [balanceLoading, setBalanceLoading] = useState(false)
 
   const answersRef = useRef<(number | null)[]>([])
   const cheatCountRef = useRef(0)
@@ -119,16 +132,38 @@ export default function QuizPage() {
     const tooFast = totalTime < MIN_EXAM_TIME
     const reasons: string[] = []
 
-    if (trapFailed) reasons.push("You answered an unsolvable question -- AI/pattern behaviour detected.")
-    if (tooFast) reasons.push(`Exam completed in ${fmt(totalTime)} -- minimum ${fmt(MIN_EXAM_TIME)} required.`)
-    if (cheats >= MAX_CHEATS) reasons.push("Exited fullscreen 3 times -- integrity violated. 50% stake slashed on-chain.")
-    if (score < PASS_SCORE && !trapFailed) reasons.push(`Score ${score}% is below the 80% pass mark.`)
+    if (trapFailed) reasons.push("You answered an unsolvable question -- AI/pattern behaviour detected. 100% stake slashed.")
+    if (tooFast) reasons.push(`Exam completed in ${fmt(totalTime)} -- minimum ${fmt(MIN_EXAM_TIME)} required. 100% stake slashed.`)
+    if (cheats >= MAX_CHEATS) reasons.push("Exited fullscreen 3 times -- integrity violated. 100% stake slashed.")
+    if (score < PASS_SCORE && !trapFailed) reasons.push(`Score ${score}% is below the 80% pass mark. 100% stake slashed.`)
 
     const passed = score >= PASS_SCORE && !trapFailed && !tooFast && cheats < MAX_CHEATS
     setResult({ score, passed, reasons, cheatCount: cheats, totalTime, trapFailed, tooFast })
     setPhase("result")
 
+    // --- Stake resolution: return on pass, slash on fail ---
     if (activeAddress) {
+      try {
+        if (passed) {
+          // Return full stake
+          await fetch("/api/quiz/stake", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userAddress: activeAddress, action: "return" }),
+          })
+        } else {
+          // Always 100% slash on any failure — cheating, trap, too fast, or low score
+          await fetch("/api/quiz/stake", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userAddress: activeAddress, action: "slash", slashPercent: 100 }),
+          })
+        }
+      } catch (e) {
+        console.error("Stake resolution error:", e)
+      }
+
+      // Also record on contract (non-fatal)
       fetch("/api/quiz/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -220,6 +255,9 @@ export default function QuizPage() {
 
   // Enter fullscreen and start exam
   const startExam = useCallback(async () => {
+    // Request fullscreen FIRST — must happen in the same user-gesture microtask
+    try { await document.documentElement.requestFullscreen() } catch (e) { console.warn("Fullscreen denied:", e) }
+
     answersRef.current = []
     cheatCountRef.current = 0
     currentQRef.current = 0
@@ -232,94 +270,116 @@ export default function QuizPage() {
     setTimeLeft(QUESTION_TIME)
     startTimeRef.current = Date.now()
     setPhase("exam")
-    try { await document.documentElement.requestFullscreen() } catch { /* ok */ }
   }, [])
 
-  // Simulate stake then load questions -- fresh UUID per attempt prevents duplicate Gemini calls
+  // Check GZC balance on mount / wallet change
+  useEffect(() => {
+    if (activeAddress) {
+      checkStakeBalance()
+    } else {
+      setGzcBalance(null)
+      setStakeMsg("")
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAddress])
+
+  const checkStakeBalance = useCallback(async () => {
+    if (!activeAddress) return
+    setBalanceLoading(true)
+    try {
+      const res = await fetch("/api/quiz/stake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userAddress: activeAddress, action: "check" }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setGzcBalance(data.balance)
+        if (data.alreadyStaked > 0) {
+          setStakeMsg(`Already staked ${data.alreadyStaked.toLocaleString()} GZC`)
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setBalanceLoading(false)
+    }
+  }, [activeAddress])
+
+  // Stake GZC: check balance → build txn → user signs → submit → confirm → load questions
   const handleStake = useCallback(async () => {
     if (!activeAddress) return
     setStaking(true)
-    sessionIdRef.current = crypto.randomUUID()
-    await new Promise((r) => setTimeout(r, 1200))
-    await loadQuestions(sessionIdRef.current)
-  }, [activeAddress, loadQuestions])
-
-  const ALGOD_API = "https://testnet-api.4160.nodely.dev"
-
-  const handleSignReceipt = useCallback(async () => {
-    if (!activeAddress || !examReceipt || !signTransactions) return
-    setReceiptStatus("signing")
-    setReceiptError("")
+    setStakeMsg("")
     try {
-      const algod = new algosdk.Algodv2("", ALGOD_API, 443)
-      const sp = await algod.getTransactionParams().do()
-      // Zero-ALGO self-payment — the note is the immutable on-chain receipt
-      const note = new TextEncoder().encode(
-        `GZCERT-RECEIPT|certId:${examReceipt.certId}` +
-        `|nft:${examReceipt.nftAssetId}` +
-        `|scholarship:${examReceipt.scholarshipTxId ?? "none"}` +
-        `|score:${examReceipt.score}%` +
-        `|ts:${examReceipt.timestamp}`
-      )
-      const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        sender: activeAddress,
-        receiver: activeAddress,
-        amount: 0,
-        note,
-        suggestedParams: sp,
-      })
-      const encoded = algosdk.encodeUnsignedTransaction(txn)
-      const signed = await signTransactions([[encoded]])
-      const signedTxn = signed[0]
-      if (!signedTxn) throw new Error("Wallet rejected")
-      await algod.sendRawTransaction(signedTxn).do()
-      await algosdk.waitForConfirmation(algod, txn.txID(), 4)
-      setReceiptTxId(txn.txID())
-      setReceiptStatus("done")
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      setReceiptError(msg.toLowerCase().includes("reject") ? "Rejected in wallet." : msg)
-      setReceiptStatus("error")
-    }
-  }, [activeAddress, examReceipt, signTransactions])
-
-  const handleClaimCert = useCallback(async () => {
-    if (!activeAddress || !examReceipt || !signTransactions) return
-    setClaimStatus("opting-in")
-    setClaimError("")
-    try {
-      const algod = new algosdk.Algodv2("", ALGOD_API, 443)
-      const sp = await algod.getTransactionParams().do()
-      const optInTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: activeAddress,
-        receiver: activeAddress,
-        assetIndex: examReceipt.nftAssetId,
-        amount: 0,
-        suggestedParams: sp,
-      })
-      const encoded = algosdk.encodeUnsignedTransaction(optInTxn)
-      const signed = await signTransactions([[encoded]])
-      const signedTxn = signed[0]
-      if (!signedTxn) throw new Error("Wallet rejected opt-in")
-      await algod.sendRawTransaction(signedTxn).do()
-      await algosdk.waitForConfirmation(algod, optInTxn.txID(), 4)
-      setClaimStatus("claiming")
-      const res = await fetch("/api/quiz/claim-cert", {
+      // Step 1: Request stake transaction from server
+      const stakeRes = await fetch("/api/quiz/stake", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student: activeAddress, nftAssetId: examReceipt.nftAssetId }),
+        body: JSON.stringify({ userAddress: activeAddress, action: "stake" }),
       })
-      if (!res.ok) {
-        const d = await res.json()
-        throw new Error(d.error ?? "Claim failed")
+      const stakeData = await stakeRes.json()
+
+      if (!stakeRes.ok) throw new Error(stakeData.error || "Failed to create stake")
+
+      // Step 2: Sign the stake transaction
+      setStakeMsg("Sign the stake transaction in your wallet...")
+      const txnBytes = Uint8Array.from(atob(stakeData.unsignedTxn), (c) => c.charCodeAt(0))
+      const signed = await signWithRetry([txnBytes])
+
+      if (!signed || !signed[0]) throw new Error("Stake transaction rejected by wallet")
+
+      // Step 3: Submit signed transaction
+      setStakeMsg("Submitting stake...")
+      const submitRes = await fetch("/api/submit-signed-txn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signedTxn: btoa(String.fromCharCode(...(signed[0] as Uint8Array))),
+        }),
+      })
+      const submitData = await submitRes.json()
+      if (!submitRes.ok) throw new Error(submitData.error || "Failed to submit stake")
+
+      // Step 4: Confirm stake on server (verifies on-chain deduction)
+      setStakeMsg("Verifying on-chain deduction...")
+      const confirmRes = await fetch("/api/quiz/stake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userAddress: activeAddress, action: "confirm", txid: submitData.txid }),
+      })
+      const confirmData = await confirmRes.json()
+      if (!confirmRes.ok) throw new Error(confirmData.error || "Stake confirmation failed")
+
+      setStakeMsg(`${STAKE_AMOUNT.toLocaleString()} GZC deducted & locked! Loading exam...`)
+
+      // Update displayed balance with the confirmed remaining balance from chain
+      if (confirmData.remainingBalance !== undefined) {
+        setGzcBalance(confirmData.remainingBalance)
+      } else {
+        setGzcBalance((prev) => (prev !== null ? prev - STAKE_AMOUNT : prev))
       }
-      setClaimStatus("claimed")
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      setClaimError(msg.toLowerCase().includes("reject") ? "Rejected in wallet." : msg)
-      setClaimStatus("error")
+
+      // Notify wallet button to refresh its balance too
+      window.dispatchEvent(new Event("gzc-balance-changed"))
+
+      // Step 5: Load questions
+      await loadQuestions()
+    } catch (err: any) {
+      console.error("Stake error:", err)
+      const msg = err.message || ""
+      if (msg.includes("Insufficient")) {
+        setStakeMsg(msg)
+      } else if (msg.includes("rejected")) {
+        setStakeMsg("Stake transaction rejected by wallet.")
+
+      } else {
+        setStakeMsg(`Error: ${msg}`)
+      }
+    } finally {
+      setStaking(false)
     }
-  }, [activeAddress, examReceipt, signTransactions])
+  }, [activeAddress, signWithRetry, loadQuestions])
 
   const timerPct = (timeLeft / QUESTION_TIME) * 100
   const timerColor = timeLeft > 20 ? "#3b82f6" : timeLeft > 10 ? "#f59e0b" : "#ef4444"
@@ -351,61 +411,108 @@ export default function QuizPage() {
   )
 
   // STAKE
-  if (phase === "stake") return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
-        <div className="mb-6 text-center">
-          <span className="inline-block rounded-full bg-blue-600/20 px-4 py-1.5 font-mono text-xs text-blue-400 uppercase tracking-widest mb-3">
-            Stake Required
-          </span>
-          <h1 className="text-2xl font-light">Before You Begin</h1>
-        </div>
-        <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-mono text-xs text-white/40">Required Stake</span>
-            <span className="font-sans text-xl font-semibold text-blue-400">{STAKE_AMOUNT} GZC</span>
+  if (phase === "stake") {
+    const hasEnough = gzcBalance !== null && gzcBalance >= STAKE_AMOUNT
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
+          <div className="mb-6 text-center">
+            <span className="inline-block rounded-full bg-blue-600/20 px-4 py-1.5 font-mono text-xs text-blue-400 uppercase tracking-widest mb-3">
+              Stake Required
+            </span>
+            <h1 className="text-2xl font-light">Before You Begin</h1>
           </div>
-          <ul className="space-y-2 font-sans text-xs text-white/60">
-            <li className="flex items-start gap-2"><span className="text-blue-400">-&gt;</span>Stake held during exam; returned on pass</li>
-            <li className="flex items-start gap-2"><span className="text-blue-400">-&gt;</span>Pass 80%+ with zero cheats to unlock scholarship</li>
-            <li className="flex items-start gap-2"><span className="text-amber-400">!</span>Exit fullscreen 3x = 50% stake slashed on-chain</li>
-            <li className="flex items-start gap-2"><span className="text-red-400">x</span>AI/bot pattern detected = immediate disqualification</li>
-          </ul>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center mb-5">
-          <p className="font-sans text-xs text-white/50">
-            10 AI-generated questions &middot; 1 min each &middot; Min 5 min total
-            <br />Contains 2 unsolvable questions -- recognise them
-          </p>
-        </div>
-        {!activeAddress ? (
-          <p className="text-center font-mono text-xs text-amber-400 py-2">Connect your wallet to proceed</p>
-        ) : (
+
+          {/* Balance display */}
+          {activeAddress && (
+            <div className="mb-4 rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+              <p className="font-mono text-[10px] text-white/40 uppercase mb-1">Your GZC Balance</p>
+              <p className="font-sans text-xl font-semibold">
+                {balanceLoading ? (
+                  <span className="text-white/30 animate-pulse">checking...</span>
+                ) : gzcBalance !== null ? (
+                  <span className={hasEnough ? "text-emerald-400" : "text-red-400"}>
+                    {gzcBalance.toLocaleString()} GZC
+                  </span>
+                ) : (
+                  <span className="text-white/30">No GZC</span>
+                )}
+              </p>
+              {!balanceLoading && !hasEnough && gzcBalance !== null && (
+                <p className="font-mono text-[10px] text-red-400 mt-1">
+                  Need {(STAKE_AMOUNT - gzcBalance).toLocaleString()} more GZC.{" "}
+                  <a href="/" className="underline text-blue-400">Buy GZC →</a>
+                </p>
+              )}
+              {!balanceLoading && gzcBalance === null && (
+                <p className="font-mono text-[10px] text-amber-400 mt-1">
+                  You need GZC tokens.{" "}
+                  <a href="/" className="underline text-blue-400">Buy GZC →</a>
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-mono text-xs text-white/40">Required Stake</span>
+              <span className="font-sans text-xl font-semibold text-blue-400">{STAKE_AMOUNT.toLocaleString()} GZC</span>
+            </div>
+            <ul className="space-y-2 font-sans text-xs text-white/60">
+              <li className="flex items-start gap-2"><span className="text-blue-400">-&gt;</span>Stake locked during exam; returned on pass</li>
+              <li className="flex items-start gap-2"><span className="text-blue-400">-&gt;</span>Pass 80%+ with zero cheats to unlock scholarship</li>
+              <li className="flex items-start gap-2"><span className="text-amber-400">!</span>Exit fullscreen 3x = 100% stake slashed, no refund</li>
+              <li className="flex items-start gap-2"><span className="text-red-400">x</span>AI/bot pattern detected = immediate disqualification</li>
+            </ul>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center mb-5">
+            <p className="font-sans text-xs text-white/50">
+              10 AI-generated questions &middot; 1 min each &middot; Min 5 min total
+              <br />Contains 2 unsolvable questions -- recognise them
+            </p>
+          </div>
+
+          {stakeMsg && (
+            <p className={`mb-3 text-center font-mono text-[10px] ${
+              stakeMsg.includes("Error") || stakeMsg.includes("Insufficient") || stakeMsg.includes("rejected")
+                ? "text-red-400"
+                : stakeMsg.includes("staked") || stakeMsg.includes("Loading")
+                  ? "text-emerald-400"
+                  : "text-white/50"
+            }`}>
+              {stakeMsg}
+            </p>
+          )}
+
+          {!activeAddress ? (
+            <p className="text-center font-mono text-xs text-amber-400 py-2">Connect your wallet to proceed</p>
+          ) : (
+            <button
+              onClick={handleStake}
+              disabled={staking || !hasEnough}
+              className="w-full rounded-xl bg-blue-600 py-3 font-sans text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
+            >
+              {staking ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeOpacity="0.25" />
+                    <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                  </svg>
+                  Staking...
+                </span>
+              ) : !hasEnough ? `Need ${STAKE_AMOUNT.toLocaleString()} GZC to Stake` : `Stake ${STAKE_AMOUNT.toLocaleString()} GZC & Continue`}
+            </button>
+          )}
           <button
-            onClick={handleStake}
-            disabled={staking}
-            className="w-full rounded-xl bg-blue-600 py-3 font-sans text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
+            onClick={() => router.push("/")}
+            className="mt-3 w-full rounded-xl border border-white/10 py-2.5 font-sans text-sm text-white/40 hover:text-white transition-colors"
           >
-            {staking ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeOpacity="0.25" />
-                  <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-                </svg>
-                Staking {STAKE_AMOUNT} GZC...
-              </span>
-            ) : `Stake ${STAKE_AMOUNT} GZC & Continue`}
+            &larr; Home
           </button>
-        )}
-        <button
-          onClick={() => router.push("/")}
-          className="mt-3 w-full rounded-xl border border-white/10 py-2.5 font-sans text-sm text-white/40 hover:text-white transition-colors"
-        >
-          &larr; Home
-        </button>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   // CONFIRM
   if (phase === "confirm") return (
@@ -420,7 +527,7 @@ export default function QuizPage() {
           {[
             "Exam enters fullscreen immediately on start",
             "Exiting fullscreen = 1 cheat violation (max 3)",
-            "3 violations: exam terminated + 50% stake slashed",
+            "3 violations: exam terminated + 100% stake slashed",
             "You must spend at least 5 minutes total",
             "2 questions have no correct answer -- leave them blank or pick wrong intentionally",
             "Answering an unsolvable question correctly = instant fail",
@@ -618,96 +725,20 @@ export default function QuizPage() {
             )}
           </div>
 
-          {result.passed && examReceipt && (
-            <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5 mb-4">
-              <p className="font-mono text-xs text-blue-400 uppercase tracking-widest mb-3 text-center">
-                NFT Certificate Minted On-Chain
+          {result.passed && (
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 mb-4 text-center">
+              <p className="font-mono text-xs text-emerald-400 uppercase tracking-widest mb-1">Stake Returned</p>
+              <p className="font-sans text-sm text-white/60">
+                {STAKE_AMOUNT.toLocaleString()} GZC returned to your wallet. Scholarship verified on-chain.
               </p>
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-white/40">Cert ID</span>
-                  <span className="font-mono text-xs text-white/80">{examReceipt.certId}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-white/40">NFT Asset</span>
-                  <a
-                    href={`https://testnet.explorer.perawallet.app/assets/${examReceipt.nftAssetId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-xs text-blue-400 hover:underline"
-                  >
-                    #{examReceipt.nftAssetId}
-                  </a>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-white/40">Meta Hash</span>
-                  <span className="font-mono text-xs text-white/50 truncate max-w-[180px]">{examReceipt.metaHash.slice(0, 16)}...</span>
-                </div>
-                {examReceipt.scholarshipTxId && (
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-white/40">Scholarship Tx</span>
-                    <a
-                      href={`https://testnet.explorer.perawallet.app/tx/${examReceipt.scholarshipTxId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-mono text-xs text-emerald-400 hover:underline"
-                    >
-                      view &rarr;
-                    </a>
-                  </div>
-                )}
-                {receiptTxId ? (
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-white/40">Your Receipt Tx</span>
-                    <a
-                      href={`https://testnet.explorer.perawallet.app/tx/${receiptTxId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-mono text-xs text-emerald-400 hover:underline"
-                    >
-                      {receiptTxId.slice(0, 10)}... &rarr;
-                    </a>
-                  </div>
-                ) : examReceipt.scholarshipTxId && (
-                  <div className="pt-1">
-                    <button
-                      onClick={handleSignReceipt}
-                      disabled={receiptStatus === "signing"}
-                      className="w-full rounded-lg border border-emerald-500/30 bg-emerald-500/10 py-2 font-sans text-xs font-medium text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
-                    >
-                      {receiptStatus === "signing" ? "Waiting for wallet..." : "Sign Scholarship Receipt"}
-                    </button>
-                    {receiptStatus === "error" && (
-                      <p className="mt-1.5 text-center font-sans text-xs text-red-400">{receiptError}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-              {examReceipt.nftClaimed ? (
-                <p className="text-center font-mono text-xs text-emerald-400">NFT delivered to your wallet</p>
-              ) : claimStatus === "claimed" ? (
-                <p className="text-center font-mono text-xs text-emerald-400">NFT claimed successfully!</p>
-              ) : (
-                <>
-                  <button
-                    onClick={handleClaimCert}
-                    disabled={claimStatus === "opting-in" || claimStatus === "claiming"}
-                    className="w-full rounded-xl bg-blue-600 py-2.5 font-sans text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
-                  >
-                    {claimStatus === "opting-in" ? "Approving opt-in..." : claimStatus === "claiming" ? "Transferring NFT..." : "Claim NFT Certificate"}
-                  </button>
-                  {claimStatus === "error" && (
-                    <p className="mt-2 text-center font-sans text-xs text-red-400">{claimError}</p>
-                  )}
-                </>
-              )}
             </div>
           )}
-          {result.passed && !examReceipt && (
-            <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5 mb-4 text-center">
-              <p className="font-mono text-xs text-blue-400 uppercase tracking-widest mb-1">On-Chain Verification</p>
+
+          {!result.passed && (
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5 mb-4 text-center">
+              <p className="font-mono text-xs text-red-400 uppercase tracking-widest mb-1">Stake Slashed</p>
               <p className="font-sans text-sm text-white/60">
-                Scholarship disbursed to your connected wallet.
+                {STAKE_AMOUNT.toLocaleString()} GZC completely slashed. No refund.
               </p>
             </div>
           )}

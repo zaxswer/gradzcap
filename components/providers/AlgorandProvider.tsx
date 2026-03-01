@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo } from "react"
-import { WalletManager, WalletProvider, NetworkId, WalletId, DEFAULT_NETWORK_CONFIG } from "@txnlab/use-wallet-react"
+import { WalletManager, WalletProvider, NetworkId, WalletId } from "@txnlab/use-wallet-react"
 
 interface AlgorandProviderProps {
   children: React.ReactNode
@@ -15,6 +15,7 @@ export function AlgorandProvider({ children }: AlgorandProviderProps) {
 
     return new WalletManager({
       wallets: [
+        WalletId.KIBISIS,
         WalletId.EXODUS,
         WalletId.PERA,
         WalletId.DEFLY,
@@ -22,7 +23,15 @@ export function AlgorandProvider({ children }: AlgorandProviderProps) {
           ? ([{ id: WalletId.WALLETCONNECT, options: { projectId: wcProjectId } }] as const)
           : []),
       ],
-      networks: DEFAULT_NETWORK_CONFIG,
+      networks: {
+        [NetworkId.TESTNET]: {
+          algod: {
+            token: "",
+            baseServer: "https://testnet-api.algonode.cloud",
+            port: 443,
+          },
+        },
+      },
       defaultNetwork: NetworkId.TESTNET,
     })
   }, [])

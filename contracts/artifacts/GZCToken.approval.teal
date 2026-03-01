@@ -213,9 +213,11 @@ buyGZC:
 	assert
 
 	// contracts\GZCToken.algo.ts:40
-	// gzcAmount = payment.amount
+	// gzcAmount = payment.amount * 1_000_000
 	frame_dig -1 // payment: PayTxn
 	gtxns Amount
+	pushint 1000000
+	*
 	frame_bury 0 // gzcAmount: uint64
 
 	// contracts\GZCToken.algo.ts:42
@@ -331,9 +333,11 @@ sellGZC:
 	assert
 
 	// contracts\GZCToken.algo.ts:63
-	// algoReturn = gzcPayment.assetAmount
+	// algoReturn = gzcPayment.assetAmount / 1_000_000
 	frame_dig -1 // gzcPayment: AssetTransferTxn
 	gtxns AssetAmount
+	pushint 1000000
+	/
 	frame_bury 0 // algoReturn: uint64
 
 	// contracts\GZCToken.algo.ts:65

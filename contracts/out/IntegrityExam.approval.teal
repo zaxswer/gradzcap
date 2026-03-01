@@ -4,49 +4,46 @@
 // algopy.arc4.ARC4Contract.approval_program() -> uint64:
 main:
     intcblock 0 1 4 8
-    bytecblock "gzc_asa_id" "student_records" "scholarship_amount"
+    bytecblock "gzc_asa_id" 0x73 "scholarship_amount"
     txn ApplicationID
     bnz main_after_if_else@2
-    // IntegrityExam.py:22-23
-    // # Global State
-    // self.gzc_asa_id = UInt64(756321188)
+    // IntegrityExam.py:25
+    // self.gzc_asa_id         = UInt64(0)
     bytec_0 // "gzc_asa_id"
-    pushint 756321188
+    intc_0 // 0
     app_global_put
-    // IntegrityExam.py:24
-    // self.scholarship_amount = UInt64(10_000_000_000)
+    // IntegrityExam.py:26
+    // self.scholarship_amount = UInt64(0)
     bytec_2 // "scholarship_amount"
-    pushint 10000000000
+    intc_0 // 0
     app_global_put
 
 main_after_if_else@2:
-    // IntegrityExam.py:20
+    // IntegrityExam.py:19
     // class IntegrityExam(ARC4Contract):
-    txn NumAppArgs
-    bz main___algopy_default_create@15
     txn OnCompletion
     !
     assert
     txn ApplicationID
-    assert
-    pushbytess 0xa03b81d2 0xdf54e8aa 0x11133418 0xe6945e17 0x6f703a51 0x0dd11896 // method "create_application(uint64)void", method "opt_in_to_asset(uint64)void", method "claim_demo_tokens()void", method "stake_and_start(axfer)void", method "record_cheat(address)void", method "complete_exam(address,uint64)void"
+    bz main_create_NoOp@12
+    pushbytess 0xdf54e8aa 0x11133418 0xe6945e17 0x6f703a51 0x0dd11896 0x9dbb4a76 // method "opt_in_to_asset(uint64)void", method "claim_demo_tokens()void", method "stake_and_start(axfer)void", method "record_cheat(address)void", method "complete_exam(address,uint64)void", method "admin_withdraw(uint64)void"
     txna ApplicationArgs 0
-    match create_application opt_in_to_asset claim_demo_tokens stake_and_start record_cheat complete_exam
+    match opt_in_to_asset claim_demo_tokens stake_and_start record_cheat complete_exam admin_withdraw
     err
 
-main___algopy_default_create@15:
-    txn OnCompletion
-    !
-    txn ApplicationID
-    !
-    &&
-    return
+main_create_NoOp@12:
+    // IntegrityExam.py:19
+    // class IntegrityExam(ARC4Contract):
+    pushbytes 0xa03b81d2 // method "create_application(uint64)void"
+    txna ApplicationArgs 0
+    match create_application
+    err
 
 
 // IntegrityExam.IntegrityExam.create_application[routing]() -> void:
 create_application:
-    // IntegrityExam.py:30
-    // @arc4.abimethod(allow_actions=["NoOp"])
+    // IntegrityExam.py:28
+    // @arc4.abimethod(create="require")
     txna ApplicationArgs 1
     dup
     len
@@ -54,34 +51,25 @@ create_application:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // IntegrityExam.py:33
-    // assert Txn.sender == Global.creator_address, "Only creator"
-    txn Sender
-    global CreatorAddress
-    ==
-    assert // Only creator
-    // IntegrityExam.py:34
-    // assert self.gzc_asa_id == 0, "Asset ID already set"
-    intc_0 // 0
-    bytec_0 // "gzc_asa_id"
-    app_global_get_ex
-    assert // check self.gzc_asa_id exists
-    !
-    assert // Asset ID already set
-    // IntegrityExam.py:35
-    // self.gzc_asa_id = gzc_id.id
+    // IntegrityExam.py:30
+    // self.gzc_asa_id         = gzc_id.id
     bytec_0 // "gzc_asa_id"
     swap
     app_global_put
-    // IntegrityExam.py:30
-    // @arc4.abimethod(allow_actions=["NoOp"])
+    // IntegrityExam.py:31
+    // self.scholarship_amount = UInt64(10_000_000_000)
+    bytec_2 // "scholarship_amount"
+    pushint 10000000000
+    app_global_put
+    // IntegrityExam.py:28
+    // @arc4.abimethod(create="require")
     intc_1 // 1
     return
 
 
 // IntegrityExam.IntegrityExam.opt_in_to_asset[routing]() -> void:
 opt_in_to_asset:
-    // IntegrityExam.py:37
+    // IntegrityExam.py:33
     // @arc4.abimethod
     txna ApplicationArgs 1
     dup
@@ -90,13 +78,13 @@ opt_in_to_asset:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // IntegrityExam.py:40
+    // IntegrityExam.py:35
     // assert Txn.sender == Global.creator_address, "Only creator"
     txn Sender
     global CreatorAddress
     ==
     assert // Only creator
-    // IntegrityExam.py:41
+    // IntegrityExam.py:36
     // assert gzc_asset.id == self.gzc_asa_id, "Asset mismatch"
     intc_0 // 0
     bytec_0 // "gzc_asa_id"
@@ -105,36 +93,36 @@ opt_in_to_asset:
     dig 1
     ==
     assert // Asset mismatch
-    // IntegrityExam.py:43-47
+    // IntegrityExam.py:37-41
     // itxn.AssetTransfer(
     //     xfer_asset=gzc_asset,
     //     asset_receiver=Global.current_application_address,
     //     asset_amount=0,
     // ).submit()
     itxn_begin
-    // IntegrityExam.py:45
+    // IntegrityExam.py:39
     // asset_receiver=Global.current_application_address,
     global CurrentApplicationAddress
-    // IntegrityExam.py:46
+    // IntegrityExam.py:40
     // asset_amount=0,
     intc_0 // 0
     itxn_field AssetAmount
     itxn_field AssetReceiver
     itxn_field XferAsset
-    // IntegrityExam.py:43
+    // IntegrityExam.py:37
     // itxn.AssetTransfer(
     intc_2 // axfer
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // IntegrityExam.py:43-47
+    // IntegrityExam.py:37-41
     // itxn.AssetTransfer(
     //     xfer_asset=gzc_asset,
     //     asset_receiver=Global.current_application_address,
     //     asset_amount=0,
     // ).submit()
     itxn_submit
-    // IntegrityExam.py:37
+    // IntegrityExam.py:33
     // @arc4.abimethod
     intc_1 // 1
     return
@@ -142,64 +130,60 @@ opt_in_to_asset:
 
 // IntegrityExam.IntegrityExam.claim_demo_tokens[routing]() -> void:
 claim_demo_tokens:
-    // IntegrityExam.py:55-56
-    // # Sybil protection: check if already claimed
-    // assert sender_address not in self.has_claimed_demo, "Already claimed demo tokens"
-    pushbytes "has_claimed_demo"
-    // IntegrityExam.py:53
+    // IntegrityExam.py:46
+    // assert sender_address not in self.has_claimed_demo, "Already claimed"
+    pushbytes 0x64
+    // IntegrityExam.py:45
     // sender_address = arc4.Address(Txn.sender)
     txn Sender
-    // IntegrityExam.py:55-56
-    // # Sybil protection: check if already claimed
-    // assert sender_address not in self.has_claimed_demo, "Already claimed demo tokens"
+    // IntegrityExam.py:46
+    // assert sender_address not in self.has_claimed_demo, "Already claimed"
     concat
     dup
     box_len
     bury 1
     !
-    assert // Already claimed demo tokens
-    // IntegrityExam.py:61-65
+    assert // Already claimed
+    // IntegrityExam.py:47-51
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=Txn.sender,
-    //     asset_amount=giveaway_val,
+    //     asset_amount=UInt64(1_000_000_000),
     // ).submit()
     itxn_begin
-    // IntegrityExam.py:62
+    // IntegrityExam.py:48
     // xfer_asset=Asset(self.gzc_asa_id),
     intc_0 // 0
     bytec_0 // "gzc_asa_id"
     app_global_get_ex
     assert // check self.gzc_asa_id exists
-    // IntegrityExam.py:63
+    // IntegrityExam.py:49
     // asset_receiver=Txn.sender,
     txn Sender
-    // IntegrityExam.py:58-59
-    // # 1000 GZC (Assuming 6 decimals: 1,000 * 1,000,000)
-    // giveaway_val = UInt64(1_000_000_000)
+    // IntegrityExam.py:50
+    // asset_amount=UInt64(1_000_000_000),
     pushint 1000000000
     itxn_field AssetAmount
     itxn_field AssetReceiver
     itxn_field XferAsset
-    // IntegrityExam.py:61
+    // IntegrityExam.py:47
     // itxn.AssetTransfer(
     intc_2 // axfer
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // IntegrityExam.py:61-65
+    // IntegrityExam.py:47-51
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=Txn.sender,
-    //     asset_amount=giveaway_val,
+    //     asset_amount=UInt64(1_000_000_000),
     // ).submit()
     itxn_submit
-    // IntegrityExam.py:67
+    // IntegrityExam.py:52
     // self.has_claimed_demo[sender_address] = arc4.UInt64(1)
     pushbytes 0x0000000000000001
     box_put
-    // IntegrityExam.py:49-50
-    // # --- GIVEAWAY LOGIC ---
+    // IntegrityExam.py:43
     // @arc4.abimethod
     intc_1 // 1
     return
@@ -207,8 +191,7 @@ claim_demo_tokens:
 
 // IntegrityExam.IntegrityExam.stake_and_start[routing]() -> void:
 stake_and_start:
-    // IntegrityExam.py:69-70
-    // # --- EXAM LOGIC ---
+    // IntegrityExam.py:54
     // @arc4.abimethod
     txn GroupIndex
     intc_1 // 1
@@ -218,23 +201,23 @@ stake_and_start:
     intc_2 // axfer
     ==
     assert // transaction type is axfer
-    // IntegrityExam.py:73
+    // IntegrityExam.py:56
     // assert arc4.Address(Txn.sender) not in self.student_records, "Exam in progress"
-    bytec_1 // "student_records"
+    bytec_1 // 0x73
     txn Sender
     concat
     box_len
     bury 1
     !
     assert // Exam in progress
-    // IntegrityExam.py:74
+    // IntegrityExam.py:57
     // assert stake_pmt.asset_receiver == Global.current_application_address
     dup
     gtxns AssetReceiver
     global CurrentApplicationAddress
     ==
     assert
-    // IntegrityExam.py:75
+    // IntegrityExam.py:58
     // assert stake_pmt.xfer_asset.id == self.gzc_asa_id
     dup
     gtxns XferAsset
@@ -244,39 +227,38 @@ stake_and_start:
     assert // check self.gzc_asa_id exists
     ==
     assert
-    // IntegrityExam.py:76
+    // IntegrityExam.py:59
     // assert stake_pmt.asset_amount > 0
     gtxns AssetAmount
     dup
     assert
-    // IntegrityExam.py:79
+    // IntegrityExam.py:61
     // staked_amount=arc4.UInt64(stake_pmt.asset_amount),
     itob
-    // IntegrityExam.py:78-83
+    // IntegrityExam.py:60-65
     // self.student_records[arc4.Address(Txn.sender)] = StudentData(
     //     staked_amount=arc4.UInt64(stake_pmt.asset_amount),
     //     marks=arc4.UInt64(0),
     //     cheat_count=arc4.UInt64(0),
-    //     is_exam_active=arc4.UInt64(1)
+    //     is_exam_active=arc4.UInt64(1),
     // )
     pushbytes 0x000000000000000000000000000000000000000000000001
     concat
-    // IntegrityExam.py:78
+    // IntegrityExam.py:60
     // self.student_records[arc4.Address(Txn.sender)] = StudentData(
-    bytec_1 // "student_records"
+    bytec_1 // 0x73
     txn Sender
     concat
-    // IntegrityExam.py:78-83
+    // IntegrityExam.py:60-65
     // self.student_records[arc4.Address(Txn.sender)] = StudentData(
     //     staked_amount=arc4.UInt64(stake_pmt.asset_amount),
     //     marks=arc4.UInt64(0),
     //     cheat_count=arc4.UInt64(0),
-    //     is_exam_active=arc4.UInt64(1)
+    //     is_exam_active=arc4.UInt64(1),
     // )
     swap
     box_put
-    // IntegrityExam.py:69-70
-    // # --- EXAM LOGIC ---
+    // IntegrityExam.py:54
     // @arc4.abimethod
     intc_1 // 1
     return
@@ -284,7 +266,7 @@ stake_and_start:
 
 // IntegrityExam.IntegrityExam.record_cheat[routing]() -> void:
 record_cheat:
-    // IntegrityExam.py:85
+    // IntegrityExam.py:67
     // @arc4.abimethod
     txna ApplicationArgs 1
     dup
@@ -292,28 +274,28 @@ record_cheat:
     pushint 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // IntegrityExam.py:88
+    // IntegrityExam.py:69
     // assert Txn.sender == Global.creator_address, "Only proctor"
     txn Sender
     global CreatorAddress
     ==
     assert // Only proctor
-    // IntegrityExam.py:90
-    // record = self.student_records[student].copy()
-    bytec_1 // "student_records"
+    // IntegrityExam.py:70
+    // record     = self.student_records[student].copy()
+    bytec_1 // 0x73
     swap
     concat
     dup
     box_get
     assert // check self.student_records entry exists
-    // IntegrityExam.py:91
+    // IntegrityExam.py:71
     // new_cheats = record.cheat_count.native + 1
     dup
     pushint 16
     extract_uint64
     intc_1 // 1
     +
-    // IntegrityExam.py:92
+    // IntegrityExam.py:72
     // record.cheat_count = arc4.UInt64(new_cheats)
     dup
     itob
@@ -321,12 +303,12 @@ record_cheat:
     swap
     replace2 16
     swap
-    // IntegrityExam.py:94
+    // IntegrityExam.py:73
     // if new_cheats == 3:
     pushint 3
     ==
     bz record_cheat_after_if_else@3
-    // IntegrityExam.py:95
+    // IntegrityExam.py:74
     // record.staked_amount = arc4.UInt64(record.staked_amount.native // 2)
     dup
     intc_0 // 0
@@ -337,12 +319,12 @@ record_cheat:
     replace2 0
 
 record_cheat_after_if_else@3:
-    // IntegrityExam.py:97
+    // IntegrityExam.py:75
     // self.student_records[student] = record.copy()
     dig 1
     swap
     box_put
-    // IntegrityExam.py:85
+    // IntegrityExam.py:67
     // @arc4.abimethod
     intc_1 // 1
     return
@@ -351,7 +333,7 @@ record_cheat_after_if_else@3:
 // IntegrityExam.IntegrityExam.complete_exam[routing]() -> void:
 complete_exam:
     pushbytes ""
-    // IntegrityExam.py:99
+    // IntegrityExam.py:77
     // @arc4.abimethod
     txna ApplicationArgs 1
     dupn 2
@@ -366,15 +348,15 @@ complete_exam:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // IntegrityExam.py:102
+    // IntegrityExam.py:79
     // assert Txn.sender == Global.creator_address, "Only proctor"
     txn Sender
     global CreatorAddress
     ==
     assert // Only proctor
-    // IntegrityExam.py:104
+    // IntegrityExam.py:80
     // record = self.student_records[student].copy()
-    bytec_1 // "student_records"
+    bytec_1 // 0x73
     uncover 2
     concat
     dup
@@ -383,8 +365,7 @@ complete_exam:
     swap
     cover 2
     assert // check self.student_records entry exists
-    // IntegrityExam.py:106-107
-    // # Reward 10k GZC if 80+ marks and 0 cheats
+    // IntegrityExam.py:81
     // if final_marks >= 80 and record.cheat_count.native == 0:
     pushint 80
     >=
@@ -393,20 +374,20 @@ complete_exam:
     pushint 16
     extract_uint64
     bnz complete_exam_after_if_else@5
-    // IntegrityExam.py:108-112
+    // IntegrityExam.py:82-86
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=student.native,
     //     asset_amount=self.scholarship_amount,
     // ).submit()
     itxn_begin
-    // IntegrityExam.py:109
+    // IntegrityExam.py:83
     // xfer_asset=Asset(self.gzc_asa_id),
     intc_0 // 0
     bytec_0 // "gzc_asa_id"
     app_global_get_ex
     assert // check self.gzc_asa_id exists
-    // IntegrityExam.py:111
+    // IntegrityExam.py:85
     // asset_amount=self.scholarship_amount,
     intc_0 // 0
     bytec_2 // "scholarship_amount"
@@ -416,13 +397,13 @@ complete_exam:
     dig 3
     itxn_field AssetReceiver
     itxn_field XferAsset
-    // IntegrityExam.py:108
+    // IntegrityExam.py:82
     // itxn.AssetTransfer(
     intc_2 // axfer
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // IntegrityExam.py:108-112
+    // IntegrityExam.py:82-86
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=student.native,
@@ -431,8 +412,7 @@ complete_exam:
     itxn_submit
 
 complete_exam_after_if_else@5:
-    // IntegrityExam.py:114-115
-    // # Refund remaining stake
+    // IntegrityExam.py:87
     // if record.staked_amount.native > 0:
     dup
     intc_0 // 0
@@ -440,14 +420,14 @@ complete_exam_after_if_else@5:
     dup
     bury 5
     bz complete_exam_after_if_else@8
-    // IntegrityExam.py:116-120
+    // IntegrityExam.py:88-92
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=student.native,
     //     asset_amount=record.staked_amount.native,
     // ).submit()
     itxn_begin
-    // IntegrityExam.py:117
+    // IntegrityExam.py:89
     // xfer_asset=Asset(self.gzc_asa_id),
     intc_0 // 0
     bytec_0 // "gzc_asa_id"
@@ -458,13 +438,13 @@ complete_exam_after_if_else@5:
     dig 3
     itxn_field AssetReceiver
     itxn_field XferAsset
-    // IntegrityExam.py:116
+    // IntegrityExam.py:88
     // itxn.AssetTransfer(
     intc_2 // axfer
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // IntegrityExam.py:116-120
+    // IntegrityExam.py:88-92
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=student.native,
@@ -473,12 +453,68 @@ complete_exam_after_if_else@5:
     itxn_submit
 
 complete_exam_after_if_else@8:
-    // IntegrityExam.py:122
+    // IntegrityExam.py:93
     // del self.student_records[student]
     dig 1
     box_del
     pop
+    // IntegrityExam.py:77
+    // @arc4.abimethod
+    intc_1 // 1
+    return
+
+
+// IntegrityExam.IntegrityExam.admin_withdraw[routing]() -> void:
+admin_withdraw:
+    // IntegrityExam.py:95
+    // @arc4.abimethod
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_3 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    // IntegrityExam.py:97
+    // assert Txn.sender == Global.creator_address, "Only creator"
+    txn Sender
+    global CreatorAddress
+    ==
+    assert // Only creator
+    // IntegrityExam.py:98-102
+    // itxn.AssetTransfer(
+    //     xfer_asset=Asset(self.gzc_asa_id),
+    //     asset_receiver=Global.creator_address,
+    //     asset_amount=amount,
+    // ).submit()
+    itxn_begin
     // IntegrityExam.py:99
+    // xfer_asset=Asset(self.gzc_asa_id),
+    intc_0 // 0
+    bytec_0 // "gzc_asa_id"
+    app_global_get_ex
+    assert // check self.gzc_asa_id exists
+    // IntegrityExam.py:100
+    // asset_receiver=Global.creator_address,
+    global CreatorAddress
+    uncover 2
+    itxn_field AssetAmount
+    itxn_field AssetReceiver
+    itxn_field XferAsset
+    // IntegrityExam.py:98
+    // itxn.AssetTransfer(
+    intc_2 // axfer
+    itxn_field TypeEnum
+    intc_0 // 0
+    itxn_field Fee
+    // IntegrityExam.py:98-102
+    // itxn.AssetTransfer(
+    //     xfer_asset=Asset(self.gzc_asa_id),
+    //     asset_receiver=Global.creator_address,
+    //     asset_amount=amount,
+    // ).submit()
+    itxn_submit
+    // IntegrityExam.py:95
     // @arc4.abimethod
     intc_1 // 1
     return

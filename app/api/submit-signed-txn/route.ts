@@ -7,18 +7,22 @@ const ALGOD_TOKEN = ""
 
 export async function POST(request: NextRequest) {
   try {
-    const { signedTxn } = await request.json()
+    const body = await request.json()
+    const { signedTxn, signedTxns } = body
     
-    if (!signedTxn || typeof signedTxn !== 'string') {
-      return NextResponse.json({ error: "Signed transaction is required" }, { status: 400 })
+    // Support both single and multiple transactions
+    const txnsArray = signedTxns || (signedTxn ? [signedTxn] : null)
+    
+    if (!txnsArray || !Array.isArray(txnsArray) || txnsArray.length === 0) {
+      return NextResponse.json({ error: "Signed transaction(s) required" }, { status: 400 })
     }
     
     const algod = new algosdk.Algodv2(ALGOD_TOKEN, ALGOD_SERVER, ALGOD_PORT)
     
-    // Decode the base64 signed transaction
-    const signedTxnBytes = Buffer.from(signedTxn, 'base64')
+    // Decode all signed transactions
+    const signedTxnBytes = txnsArray.map((txn: string) => Buffer.from(txn, 'base64'))
     
-    // Submit transaction to the network
+    // Submit to the network (supports both single and atomic groups)
     const { txid } = await algod.sendRawTransaction(signedTxnBytes).do()
     
     // Wait for confirmation

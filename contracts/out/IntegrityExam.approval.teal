@@ -4,35 +4,40 @@
 // algopy.arc4.ARC4Contract.approval_program() -> uint64:
 main:
     intcblock 0 1 4 8
-    bytecblock "gzc_asa_id" 0x73 "scholarship_amount"
+    bytecblock "gzc_asa_id" 0x73 "scholarship_amount" 0x63 0x151f7c75
     txn ApplicationID
     bnz main_after_if_else@2
-    // IntegrityExam.py:25
+    // contracts/IntegrityExam.py:33
     // self.gzc_asa_id         = UInt64(0)
     bytec_0 // "gzc_asa_id"
     intc_0 // 0
     app_global_put
-    // IntegrityExam.py:26
+    // contracts/IntegrityExam.py:34
     // self.scholarship_amount = UInt64(0)
     bytec_2 // "scholarship_amount"
     intc_0 // 0
     app_global_put
+    // contracts/IntegrityExam.py:35
+    // self.total_questions    = UInt64(10)
+    pushbytes "total_questions"
+    pushint 10
+    app_global_put
 
 main_after_if_else@2:
-    // IntegrityExam.py:19
+    // contracts/IntegrityExam.py:26
     // class IntegrityExam(ARC4Contract):
     txn OnCompletion
     !
     assert
     txn ApplicationID
-    bz main_create_NoOp@12
-    pushbytess 0xdf54e8aa 0x11133418 0xe6945e17 0x6f703a51 0x0dd11896 0x9dbb4a76 // method "opt_in_to_asset(uint64)void", method "claim_demo_tokens()void", method "stake_and_start(axfer)void", method "record_cheat(address)void", method "complete_exam(address,uint64)void", method "admin_withdraw(uint64)void"
+    bz main_create_NoOp@13
+    pushbytess 0xdf54e8aa 0x11133418 0xe6945e17 0x6f703a51 0x2622c952 0x9dbb4a76 0xae77905f // method "opt_in_to_asset(uint64)void", method "claim_demo_tokens()void", method "stake_and_start(axfer)void", method "record_cheat(address)void", method "complete_exam(address,uint64,uint64)uint64", method "admin_withdraw(uint64)void", method "get_certificate(address)(address,uint64,uint64,uint64,uint64)"
     txna ApplicationArgs 0
-    match opt_in_to_asset claim_demo_tokens stake_and_start record_cheat complete_exam admin_withdraw
+    match opt_in_to_asset claim_demo_tokens stake_and_start record_cheat complete_exam admin_withdraw get_certificate
     err
 
-main_create_NoOp@12:
-    // IntegrityExam.py:19
+main_create_NoOp@13:
+    // contracts/IntegrityExam.py:26
     // class IntegrityExam(ARC4Contract):
     pushbytes 0xa03b81d2 // method "create_application(uint64)void"
     txna ApplicationArgs 0
@@ -42,7 +47,7 @@ main_create_NoOp@12:
 
 // IntegrityExam.IntegrityExam.create_application[routing]() -> void:
 create_application:
-    // IntegrityExam.py:28
+    // contracts/IntegrityExam.py:37
     // @arc4.abimethod(create="require")
     txna ApplicationArgs 1
     dup
@@ -51,17 +56,17 @@ create_application:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // IntegrityExam.py:30
+    // contracts/IntegrityExam.py:39
     // self.gzc_asa_id         = gzc_id.id
     bytec_0 // "gzc_asa_id"
     swap
     app_global_put
-    // IntegrityExam.py:31
+    // contracts/IntegrityExam.py:40
     // self.scholarship_amount = UInt64(10_000_000_000)
     bytec_2 // "scholarship_amount"
     pushint 10000000000
     app_global_put
-    // IntegrityExam.py:28
+    // contracts/IntegrityExam.py:37
     // @arc4.abimethod(create="require")
     intc_1 // 1
     return
@@ -69,7 +74,7 @@ create_application:
 
 // IntegrityExam.IntegrityExam.opt_in_to_asset[routing]() -> void:
 opt_in_to_asset:
-    // IntegrityExam.py:33
+    // contracts/IntegrityExam.py:42
     // @arc4.abimethod
     txna ApplicationArgs 1
     dup
@@ -78,13 +83,13 @@ opt_in_to_asset:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // IntegrityExam.py:35
+    // contracts/IntegrityExam.py:44
     // assert Txn.sender == Global.creator_address, "Only creator"
     txn Sender
     global CreatorAddress
     ==
     assert // Only creator
-    // IntegrityExam.py:36
+    // contracts/IntegrityExam.py:45
     // assert gzc_asset.id == self.gzc_asa_id, "Asset mismatch"
     intc_0 // 0
     bytec_0 // "gzc_asa_id"
@@ -93,36 +98,36 @@ opt_in_to_asset:
     dig 1
     ==
     assert // Asset mismatch
-    // IntegrityExam.py:37-41
+    // contracts/IntegrityExam.py:46-50
     // itxn.AssetTransfer(
     //     xfer_asset=gzc_asset,
     //     asset_receiver=Global.current_application_address,
     //     asset_amount=0,
     // ).submit()
     itxn_begin
-    // IntegrityExam.py:39
+    // contracts/IntegrityExam.py:48
     // asset_receiver=Global.current_application_address,
     global CurrentApplicationAddress
-    // IntegrityExam.py:40
+    // contracts/IntegrityExam.py:49
     // asset_amount=0,
     intc_0 // 0
     itxn_field AssetAmount
     itxn_field AssetReceiver
     itxn_field XferAsset
-    // IntegrityExam.py:37
+    // contracts/IntegrityExam.py:46
     // itxn.AssetTransfer(
     intc_2 // axfer
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // IntegrityExam.py:37-41
+    // contracts/IntegrityExam.py:46-50
     // itxn.AssetTransfer(
     //     xfer_asset=gzc_asset,
     //     asset_receiver=Global.current_application_address,
     //     asset_amount=0,
     // ).submit()
     itxn_submit
-    // IntegrityExam.py:33
+    // contracts/IntegrityExam.py:42
     // @arc4.abimethod
     intc_1 // 1
     return
@@ -130,13 +135,13 @@ opt_in_to_asset:
 
 // IntegrityExam.IntegrityExam.claim_demo_tokens[routing]() -> void:
 claim_demo_tokens:
-    // IntegrityExam.py:46
+    // contracts/IntegrityExam.py:55
     // assert sender_address not in self.has_claimed_demo, "Already claimed"
     pushbytes 0x64
-    // IntegrityExam.py:45
+    // contracts/IntegrityExam.py:54
     // sender_address = arc4.Address(Txn.sender)
     txn Sender
-    // IntegrityExam.py:46
+    // contracts/IntegrityExam.py:55
     // assert sender_address not in self.has_claimed_demo, "Already claimed"
     concat
     dup
@@ -144,46 +149,46 @@ claim_demo_tokens:
     bury 1
     !
     assert // Already claimed
-    // IntegrityExam.py:47-51
+    // contracts/IntegrityExam.py:56-60
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=Txn.sender,
     //     asset_amount=UInt64(1_000_000_000),
     // ).submit()
     itxn_begin
-    // IntegrityExam.py:48
+    // contracts/IntegrityExam.py:57
     // xfer_asset=Asset(self.gzc_asa_id),
     intc_0 // 0
     bytec_0 // "gzc_asa_id"
     app_global_get_ex
     assert // check self.gzc_asa_id exists
-    // IntegrityExam.py:49
+    // contracts/IntegrityExam.py:58
     // asset_receiver=Txn.sender,
     txn Sender
-    // IntegrityExam.py:50
+    // contracts/IntegrityExam.py:59
     // asset_amount=UInt64(1_000_000_000),
     pushint 1000000000
     itxn_field AssetAmount
     itxn_field AssetReceiver
     itxn_field XferAsset
-    // IntegrityExam.py:47
+    // contracts/IntegrityExam.py:56
     // itxn.AssetTransfer(
     intc_2 // axfer
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // IntegrityExam.py:47-51
+    // contracts/IntegrityExam.py:56-60
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=Txn.sender,
     //     asset_amount=UInt64(1_000_000_000),
     // ).submit()
     itxn_submit
-    // IntegrityExam.py:52
+    // contracts/IntegrityExam.py:61
     // self.has_claimed_demo[sender_address] = arc4.UInt64(1)
     pushbytes 0x0000000000000001
     box_put
-    // IntegrityExam.py:43
+    // contracts/IntegrityExam.py:52
     // @arc4.abimethod
     intc_1 // 1
     return
@@ -191,7 +196,7 @@ claim_demo_tokens:
 
 // IntegrityExam.IntegrityExam.stake_and_start[routing]() -> void:
 stake_and_start:
-    // IntegrityExam.py:54
+    // contracts/IntegrityExam.py:63
     // @arc4.abimethod
     txn GroupIndex
     intc_1 // 1
@@ -201,7 +206,7 @@ stake_and_start:
     intc_2 // axfer
     ==
     assert // transaction type is axfer
-    // IntegrityExam.py:56
+    // contracts/IntegrityExam.py:65
     // assert arc4.Address(Txn.sender) not in self.student_records, "Exam in progress"
     bytec_1 // 0x73
     txn Sender
@@ -210,14 +215,14 @@ stake_and_start:
     bury 1
     !
     assert // Exam in progress
-    // IntegrityExam.py:57
+    // contracts/IntegrityExam.py:66
     // assert stake_pmt.asset_receiver == Global.current_application_address
     dup
     gtxns AssetReceiver
     global CurrentApplicationAddress
     ==
     assert
-    // IntegrityExam.py:58
+    // contracts/IntegrityExam.py:67
     // assert stake_pmt.xfer_asset.id == self.gzc_asa_id
     dup
     gtxns XferAsset
@@ -227,15 +232,15 @@ stake_and_start:
     assert // check self.gzc_asa_id exists
     ==
     assert
-    // IntegrityExam.py:59
+    // contracts/IntegrityExam.py:68
     // assert stake_pmt.asset_amount > 0
     gtxns AssetAmount
     dup
     assert
-    // IntegrityExam.py:61
+    // contracts/IntegrityExam.py:70
     // staked_amount=arc4.UInt64(stake_pmt.asset_amount),
     itob
-    // IntegrityExam.py:60-65
+    // contracts/IntegrityExam.py:69-74
     // self.student_records[arc4.Address(Txn.sender)] = StudentData(
     //     staked_amount=arc4.UInt64(stake_pmt.asset_amount),
     //     marks=arc4.UInt64(0),
@@ -244,12 +249,12 @@ stake_and_start:
     // )
     pushbytes 0x000000000000000000000000000000000000000000000001
     concat
-    // IntegrityExam.py:60
+    // contracts/IntegrityExam.py:69
     // self.student_records[arc4.Address(Txn.sender)] = StudentData(
     bytec_1 // 0x73
     txn Sender
     concat
-    // IntegrityExam.py:60-65
+    // contracts/IntegrityExam.py:69-74
     // self.student_records[arc4.Address(Txn.sender)] = StudentData(
     //     staked_amount=arc4.UInt64(stake_pmt.asset_amount),
     //     marks=arc4.UInt64(0),
@@ -258,7 +263,7 @@ stake_and_start:
     // )
     swap
     box_put
-    // IntegrityExam.py:54
+    // contracts/IntegrityExam.py:63
     // @arc4.abimethod
     intc_1 // 1
     return
@@ -266,7 +271,7 @@ stake_and_start:
 
 // IntegrityExam.IntegrityExam.record_cheat[routing]() -> void:
 record_cheat:
-    // IntegrityExam.py:67
+    // contracts/IntegrityExam.py:76
     // @arc4.abimethod
     txna ApplicationArgs 1
     dup
@@ -274,57 +279,40 @@ record_cheat:
     pushint 32
     ==
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
-    // IntegrityExam.py:69
+    // contracts/IntegrityExam.py:78
     // assert Txn.sender == Global.creator_address, "Only proctor"
     txn Sender
     global CreatorAddress
     ==
     assert // Only proctor
-    // IntegrityExam.py:70
-    // record     = self.student_records[student].copy()
+    // contracts/IntegrityExam.py:79
+    // record = self.student_records[student].copy()
     bytec_1 // 0x73
     swap
     concat
     dup
     box_get
     assert // check self.student_records entry exists
-    // IntegrityExam.py:71
+    // contracts/IntegrityExam.py:80
     // new_cheats = record.cheat_count.native + 1
     dup
     pushint 16
     extract_uint64
     intc_1 // 1
     +
-    // IntegrityExam.py:72
+    // contracts/IntegrityExam.py:81
     // record.cheat_count = arc4.UInt64(new_cheats)
-    dup
     itob
-    uncover 2
-    swap
     replace2 16
-    swap
-    // IntegrityExam.py:73
-    // if new_cheats == 3:
-    pushint 3
-    ==
-    bz record_cheat_after_if_else@3
-    // IntegrityExam.py:74
-    // record.staked_amount = arc4.UInt64(record.staked_amount.native // 2)
-    dup
-    intc_0 // 0
-    extract_uint64
-    pushint 2
-    /
-    itob
+    // contracts/IntegrityExam.py:82-83
+    // # 100% slash on ANY cheat - keep all stake in contract
+    // record.staked_amount = arc4.UInt64(0)
+    pushbytes 0x0000000000000000
     replace2 0
-
-record_cheat_after_if_else@3:
-    // IntegrityExam.py:75
+    // contracts/IntegrityExam.py:84
     // self.student_records[student] = record.copy()
-    dig 1
-    swap
     box_put
-    // IntegrityExam.py:67
+    // contracts/IntegrityExam.py:76
     // @arc4.abimethod
     intc_1 // 1
     return
@@ -333,7 +321,7 @@ record_cheat_after_if_else@3:
 // IntegrityExam.IntegrityExam.complete_exam[routing]() -> void:
 complete_exam:
     pushbytes ""
-    // IntegrityExam.py:77
+    // contracts/IntegrityExam.py:86
     // @arc4.abimethod
     txna ApplicationArgs 1
     dupn 2
@@ -343,18 +331,27 @@ complete_exam:
     assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
     txna ApplicationArgs 2
     dup
+    cover 2
+    dup
     len
     intc_3 // 8
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // IntegrityExam.py:79
+    txna ApplicationArgs 3
+    dup
+    cover 3
+    len
+    intc_3 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    // contracts/IntegrityExam.py:88
     // assert Txn.sender == Global.creator_address, "Only proctor"
     txn Sender
     global CreatorAddress
     ==
     assert // Only proctor
-    // IntegrityExam.py:80
+    // contracts/IntegrityExam.py:89
     // record = self.student_records[student].copy()
     bytec_1 // 0x73
     uncover 2
@@ -365,86 +362,206 @@ complete_exam:
     swap
     cover 2
     assert // check self.student_records entry exists
-    // IntegrityExam.py:81
+    // contracts/IntegrityExam.py:91-92
+    // # Only issue certificate, return stake, and give scholarship if passed with NO cheats
+    // nft_id = UInt64(0)
+    intc_0 // 0
+    swap
+    // contracts/IntegrityExam.py:93
     // if final_marks >= 80 and record.cheat_count.native == 0:
     pushint 80
     >=
-    bz complete_exam_after_if_else@5
-    dup
+    bz complete_exam_after_if_else@10
+    dig 1
     pushint 16
     extract_uint64
-    bnz complete_exam_after_if_else@5
-    // IntegrityExam.py:82-86
+    bnz complete_exam_after_if_else@10
+    // contracts/IntegrityExam.py:94-106
+    // # Mint scholarship NFT certificate
+    // nft_id = itxn.AssetConfig(
+    //     total=1,
+    //     decimals=0,
+    //     default_frozen=False,
+    //     unit_name=b"GZCERT",
+    //     asset_name=b"GradZCap Scholarship Certificate",
+    //     url=b"https://gradzcap.com/verify",
+    //     manager=Global.current_application_address,
+    //     reserve=Global.current_application_address,
+    //     freeze=Global.current_application_address,
+    //     clawback=Global.current_application_address,
+    // ).submit().created_asset.id
+    itxn_begin
+    // contracts/IntegrityExam.py:102
+    // manager=Global.current_application_address,
+    global CurrentApplicationAddress
+    // contracts/IntegrityExam.py:103-105
+    // reserve=Global.current_application_address,
+    // freeze=Global.current_application_address,
+    // clawback=Global.current_application_address,
+    dupn 3
+    itxn_field ConfigAssetClawback
+    itxn_field ConfigAssetFreeze
+    itxn_field ConfigAssetReserve
+    itxn_field ConfigAssetManager
+    // contracts/IntegrityExam.py:101
+    // url=b"https://gradzcap.com/verify",
+    pushbytes 0x68747470733a2f2f677261647a6361702e636f6d2f766572696679
+    itxn_field ConfigAssetURL
+    // contracts/IntegrityExam.py:100
+    // asset_name=b"GradZCap Scholarship Certificate",
+    pushbytes 0x477261645a436170205363686f6c617273686970204365727469666963617465
+    itxn_field ConfigAssetName
+    // contracts/IntegrityExam.py:99
+    // unit_name=b"GZCERT",
+    pushbytes 0x475a43455254
+    itxn_field ConfigAssetUnitName
+    // contracts/IntegrityExam.py:98
+    // default_frozen=False,
+    intc_0 // 0
+    itxn_field ConfigAssetDefaultFrozen
+    // contracts/IntegrityExam.py:97
+    // decimals=0,
+    intc_0 // 0
+    itxn_field ConfigAssetDecimals
+    // contracts/IntegrityExam.py:96
+    // total=1,
+    intc_1 // 1
+    itxn_field ConfigAssetTotal
+    // contracts/IntegrityExam.py:94-95
+    // # Mint scholarship NFT certificate
+    // nft_id = itxn.AssetConfig(
+    pushint 3 // acfg
+    itxn_field TypeEnum
+    intc_0 // 0
+    itxn_field Fee
+    // contracts/IntegrityExam.py:94-106
+    // # Mint scholarship NFT certificate
+    // nft_id = itxn.AssetConfig(
+    //     total=1,
+    //     decimals=0,
+    //     default_frozen=False,
+    //     unit_name=b"GZCERT",
+    //     asset_name=b"GradZCap Scholarship Certificate",
+    //     url=b"https://gradzcap.com/verify",
+    //     manager=Global.current_application_address,
+    //     reserve=Global.current_application_address,
+    //     freeze=Global.current_application_address,
+    //     clawback=Global.current_application_address,
+    // ).submit().created_asset.id
+    itxn_submit
+    itxn CreatedAssetID
+    dup
+    bury 2
+    // contracts/IntegrityExam.py:108-113
+    // # Transfer NFT to student
     // itxn.AssetTransfer(
-    //     xfer_asset=Asset(self.gzc_asa_id),
+    //     xfer_asset=Asset(nft_id),
     //     asset_receiver=student.native,
-    //     asset_amount=self.scholarship_amount,
+    //     asset_amount=1,
     // ).submit()
     itxn_begin
-    // IntegrityExam.py:83
-    // xfer_asset=Asset(self.gzc_asa_id),
-    intc_0 // 0
-    bytec_0 // "gzc_asa_id"
-    app_global_get_ex
-    assert // check self.gzc_asa_id exists
-    // IntegrityExam.py:85
-    // asset_amount=self.scholarship_amount,
-    intc_0 // 0
-    bytec_2 // "scholarship_amount"
-    app_global_get_ex
-    assert // check self.scholarship_amount exists
+    // contracts/IntegrityExam.py:112
+    // asset_amount=1,
+    intc_1 // 1
     itxn_field AssetAmount
-    dig 3
+    dig 6
+    dup
+    cover 2
     itxn_field AssetReceiver
+    dup
     itxn_field XferAsset
-    // IntegrityExam.py:82
+    // contracts/IntegrityExam.py:108-109
+    // # Transfer NFT to student
     // itxn.AssetTransfer(
     intc_2 // axfer
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // IntegrityExam.py:82-86
+    // contracts/IntegrityExam.py:108-113
+    // # Transfer NFT to student
     // itxn.AssetTransfer(
-    //     xfer_asset=Asset(self.gzc_asa_id),
+    //     xfer_asset=Asset(nft_id),
     //     asset_receiver=student.native,
-    //     asset_amount=self.scholarship_amount,
+    //     asset_amount=1,
     // ).submit()
     itxn_submit
-
-complete_exam_after_if_else@5:
-    // IntegrityExam.py:87
+    // contracts/IntegrityExam.py:120
+    // timestamp=arc4.UInt64(Global.latest_timestamp),
+    global LatestTimestamp
+    itob
+    // contracts/IntegrityExam.py:121
+    // nft_id=arc4.UInt64(nft_id),
+    swap
+    itob
+    // contracts/IntegrityExam.py:115-122
+    // # Store certificate data on-chain
+    // self.certificates[student] = CertificateData(
+    //     student_address=student,
+    //     final_marks=arc4.UInt64(final_marks),
+    //     total_questions=arc4.UInt64(total_q),
+    //     timestamp=arc4.UInt64(Global.latest_timestamp),
+    //     nft_id=arc4.UInt64(nft_id),
+    // )
+    dig 2
+    dig 8
+    concat
+    dig 7
+    concat
+    uncover 2
+    concat
+    swap
+    concat
+    // contracts/IntegrityExam.py:115-116
+    // # Store certificate data on-chain
+    // self.certificates[student] = CertificateData(
+    bytec_3 // 0x63
+    uncover 2
+    concat
+    // contracts/IntegrityExam.py:115-122
+    // # Store certificate data on-chain
+    // self.certificates[student] = CertificateData(
+    //     student_address=student,
+    //     final_marks=arc4.UInt64(final_marks),
+    //     total_questions=arc4.UInt64(total_q),
+    //     timestamp=arc4.UInt64(Global.latest_timestamp),
+    //     nft_id=arc4.UInt64(nft_id),
+    // )
+    swap
+    box_put
+    // contracts/IntegrityExam.py:124-125
+    // # Return stake
     // if record.staked_amount.native > 0:
-    dup
+    dig 1
     intc_0 // 0
     extract_uint64
     dup
-    bury 5
+    bury 8
     bz complete_exam_after_if_else@8
-    // IntegrityExam.py:88-92
+    // contracts/IntegrityExam.py:126-130
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=student.native,
     //     asset_amount=record.staked_amount.native,
     // ).submit()
     itxn_begin
-    // IntegrityExam.py:89
+    // contracts/IntegrityExam.py:127
     // xfer_asset=Asset(self.gzc_asa_id),
     intc_0 // 0
     bytec_0 // "gzc_asa_id"
     app_global_get_ex
     assert // check self.gzc_asa_id exists
-    dig 4
+    dig 7
     itxn_field AssetAmount
-    dig 3
+    dig 6
     itxn_field AssetReceiver
     itxn_field XferAsset
-    // IntegrityExam.py:88
+    // contracts/IntegrityExam.py:126
     // itxn.AssetTransfer(
     intc_2 // axfer
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // IntegrityExam.py:88-92
+    // contracts/IntegrityExam.py:126-130
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=student.native,
@@ -453,20 +570,70 @@ complete_exam_after_if_else@5:
     itxn_submit
 
 complete_exam_after_if_else@8:
-    // IntegrityExam.py:93
+    // contracts/IntegrityExam.py:132-137
+    // # Give scholarship tokens
+    // itxn.AssetTransfer(
+    //     xfer_asset=Asset(self.gzc_asa_id),
+    //     asset_receiver=student.native,
+    //     asset_amount=self.scholarship_amount,
+    // ).submit()
+    itxn_begin
+    // contracts/IntegrityExam.py:134
+    // xfer_asset=Asset(self.gzc_asa_id),
+    intc_0 // 0
+    bytec_0 // "gzc_asa_id"
+    app_global_get_ex
+    assert // check self.gzc_asa_id exists
+    // contracts/IntegrityExam.py:136
+    // asset_amount=self.scholarship_amount,
+    intc_0 // 0
+    bytec_2 // "scholarship_amount"
+    app_global_get_ex
+    assert // check self.scholarship_amount exists
+    itxn_field AssetAmount
+    dig 6
+    itxn_field AssetReceiver
+    itxn_field XferAsset
+    // contracts/IntegrityExam.py:132-133
+    // # Give scholarship tokens
+    // itxn.AssetTransfer(
+    intc_2 // axfer
+    itxn_field TypeEnum
+    intc_0 // 0
+    itxn_field Fee
+    // contracts/IntegrityExam.py:132-137
+    // # Give scholarship tokens
+    // itxn.AssetTransfer(
+    //     xfer_asset=Asset(self.gzc_asa_id),
+    //     asset_receiver=student.native,
+    //     asset_amount=self.scholarship_amount,
+    // ).submit()
+    itxn_submit
+
+complete_exam_after_if_else@10:
+    // contracts/IntegrityExam.py:139-140
+    // # If failed or cheated, keep stake in contract (already slashed)
     // del self.student_records[student]
-    dig 1
+    dig 2
     box_del
     pop
-    // IntegrityExam.py:77
+    // contracts/IntegrityExam.py:141
+    // return arc4.UInt64(nft_id)
+    dup
+    itob
+    // contracts/IntegrityExam.py:86
     // @arc4.abimethod
+    bytec 4 // 0x151f7c75
+    swap
+    concat
+    log
     intc_1 // 1
     return
 
 
 // IntegrityExam.IntegrityExam.admin_withdraw[routing]() -> void:
 admin_withdraw:
-    // IntegrityExam.py:95
+    // contracts/IntegrityExam.py:143
     // @arc4.abimethod
     txna ApplicationArgs 1
     dup
@@ -475,46 +642,73 @@ admin_withdraw:
     ==
     assert // invalid number of bytes for arc4.uint64
     btoi
-    // IntegrityExam.py:97
+    // contracts/IntegrityExam.py:145
     // assert Txn.sender == Global.creator_address, "Only creator"
     txn Sender
     global CreatorAddress
     ==
     assert // Only creator
-    // IntegrityExam.py:98-102
+    // contracts/IntegrityExam.py:146-150
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=Global.creator_address,
     //     asset_amount=amount,
     // ).submit()
     itxn_begin
-    // IntegrityExam.py:99
+    // contracts/IntegrityExam.py:147
     // xfer_asset=Asset(self.gzc_asa_id),
     intc_0 // 0
     bytec_0 // "gzc_asa_id"
     app_global_get_ex
     assert // check self.gzc_asa_id exists
-    // IntegrityExam.py:100
+    // contracts/IntegrityExam.py:148
     // asset_receiver=Global.creator_address,
     global CreatorAddress
     uncover 2
     itxn_field AssetAmount
     itxn_field AssetReceiver
     itxn_field XferAsset
-    // IntegrityExam.py:98
+    // contracts/IntegrityExam.py:146
     // itxn.AssetTransfer(
     intc_2 // axfer
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // IntegrityExam.py:98-102
+    // contracts/IntegrityExam.py:146-150
     // itxn.AssetTransfer(
     //     xfer_asset=Asset(self.gzc_asa_id),
     //     asset_receiver=Global.creator_address,
     //     asset_amount=amount,
     // ).submit()
     itxn_submit
-    // IntegrityExam.py:95
+    // contracts/IntegrityExam.py:143
     // @arc4.abimethod
+    intc_1 // 1
+    return
+
+
+// IntegrityExam.IntegrityExam.get_certificate[routing]() -> void:
+get_certificate:
+    // contracts/IntegrityExam.py:152
+    // @arc4.abimethod(readonly=True)
+    txna ApplicationArgs 1
+    dup
+    len
+    pushint 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    // contracts/IntegrityExam.py:155
+    // return self.certificates[student].copy()
+    bytec_3 // 0x63
+    swap
+    concat
+    box_get
+    assert // check self.certificates entry exists
+    // contracts/IntegrityExam.py:152
+    // @arc4.abimethod(readonly=True)
+    bytec 4 // 0x151f7c75
+    swap
+    concat
+    log
     intc_1 // 1
     return

@@ -131,11 +131,39 @@ export default function QuizPage() {
     if (score < PASS_SCORE && !trapFailed) reasons.push(`Score ${score}% is below the 80% pass mark. 100% stake slashed.`)
 
     const passed = score >= PASS_SCORE && !trapFailed && !tooFast && cheats < MAX_CHEATS
+    const cheated = trapFailed || tooFast || cheats >= MAX_CHEATS
+    
     setResult({ score, passed, reasons, cheatCount: cheats, totalTime, trapFailed, tooFast })
     setPhase("result")
 
-    // --- Stake resolution: return on pass, slash on fail ---
+    // --- Save exam results & mint NFT (if passed) ---
     if (activeAddress) {
+      try {
+        // Save local JSON + mint NFT on-chain
+        const completeRes = await fetch("/api/quiz/complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            userAddress: activeAddress, 
+            finalMarks: passed ? score : 0,
+            totalQuestions: realQCount,
+            correctAnswers: correct,
+            passed,
+            cheated,
+            timeSpent: totalTime,
+          }),
+        })
+        const completeData = await completeRes.json()
+        console.log("Exam results saved:", completeData)
+        
+        if (completeData.nftId) {
+          console.log("NFT Certificate minted:", completeData.nftId)
+        }
+      } catch (e) {
+        console.error("Complete exam error:", e)
+      }
+
+      // --- Stake resolution: return on pass, slash on fail ---
       try {
         if (passed) {
           // Return full stake
@@ -155,13 +183,6 @@ export default function QuizPage() {
       } catch (e) {
         console.error("Stake resolution error:", e)
       }
-
-      // Also record on contract (non-fatal)
-      fetch("/api/quiz/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student: activeAddress, marks: passed ? score : 0 }),
-      }).catch(() => { /* non-fatal */ })
     }
   }, [activeAddress, loadQuestions])
 
@@ -307,20 +328,22 @@ export default function QuizPage() {
 
       if (!stakeRes.ok) throw new Error(stakeData.error || "Failed to create stake")
 
-      // Step 2: Sign the stake transaction
+      // Step 2: Sign the atomic group (2 txns: AssetTransfer + AppCall)
       setStakeMsg("Sign the stake transaction in your wallet...")
-      const txnBytes = Uint8Array.from(atob(stakeData.unsignedTxn), (c) => c.charCodeAt(0))
-      const signed = await signWithRetry([txnBytes])
+      const txnBytesArray = stakeData.unsignedTxns.map((b64: string) =>
+        Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
+      )
+      const signed = await signWithRetry(txnBytesArray)
 
-      if (!signed || !signed[0]) throw new Error("Stake transaction rejected by wallet")
+      if (!signed || signed.some((s) => !s)) throw new Error("Stake transaction rejected by wallet")
 
-      // Step 3: Submit signed transaction
+      // Step 3: Submit signed transactions
       setStakeMsg("Submitting stake...")
       const submitRes = await fetch("/api/submit-signed-txn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          signedTxn: btoa(String.fromCharCode(...(signed[0] as Uint8Array))),
+          signedTxns: signed.map((s) => btoa(String.fromCharCode(...(s as Uint8Array)))),
         }),
       })
       const submitData = await submitRes.json()

@@ -70,6 +70,7 @@ export default function QuizPage() {
   const [stakeMsg, setStakeMsg] = useState("")
   const [gzcBalance, setGzcBalance] = useState<number | null>(null)
   const [balanceLoading, setBalanceLoading] = useState(false)
+  const [examReceipt, setExamReceipt] = useState<ExamReceipt | null>(null)
 
   const answersRef = useRef<(number | null)[]>([])
   const cheatCountRef = useRef(0)
@@ -364,7 +365,8 @@ export default function QuizPage() {
       window.dispatchEvent(new Event("gzc-balance-changed"))
 
       // Step 5: Load questions
-      await loadQuestions()
+      sessionIdRef.current = crypto.randomUUID()
+      await loadQuestions(sessionIdRef.current)
     } catch (err: any) {
       console.error("Stake error:", err)
       const msg = err.message || ""

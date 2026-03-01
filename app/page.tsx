@@ -10,7 +10,6 @@ import { FaucetSection } from "@/components/sections/faucet-section"
 import { ShopSection } from "@/components/sections/shop-section"
 import { MagneticButton } from "@/components/magnetic-button"
 import { WalletConnectButton } from "@/components/wallet-connect-button"
-import { ClaimGzcTokens } from "@/components/claim-gzc-tokens"
 import { useRef, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -248,7 +247,6 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-3">
-          <ClaimGzcTokens />
           <WalletConnectButton />
         </div>
       </nav>

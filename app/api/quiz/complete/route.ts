@@ -1,35 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import algosdk from "algosdk"
-import { getAlgod, getEscrowAccount, EXAM_APP_ID } from "@/lib/algorand/escrow"
-import { handleExamSuccess } from "@/lib/algorand/certificate"
-import type { ExamReceipt } from "@/lib/algorand/certificate"
-
-const PASS_SCORE = 80
-
-export async function POST(req: NextRequest) {
-  const { student, marks } = await req.json() as { student: string; marks: number }
-  if (!student || marks === undefined) {
-    return NextResponse.json({ error: "student and marks required" }, { status: 400 })
-  }
-
-  // When the escrow key or contract is not configured, simulate gracefully
-  if (!process.env.SECRET_KEY || !EXAM_APP_ID) {
-    // Still attempt certificate minting if key exists
-    if (process.env.SECRET_KEY && marks >= PASS_SCORE) {
-      try {
-        const receipt = await handleExamSuccess(student, marks, "simulated", 10_000)
-        return NextResponse.json({ ok: true, simulated: true, receipt })
-      } catch { /* non-fatal */ }
-    }
-    return NextResponse.json({ ok: true, simulated: true })
-  }
-
-  let scholarshipTxId = ""
-
-  try {
-    const algod = getAlgod()
-    const escrow = getEscrowAccount()
-    const sp = await algod.getTransactionParams().do()
+import fs from "fs"
+import path from "path"
 const ALGOD_SERVER = "https://testnet-api.algonode.cloud"
 const ALGOD_PORT = 443
 const ALGOD_TOKEN = ""
@@ -272,17 +244,4 @@ export async function GET(request: NextRequest) {
     console.error("Get certificate error:", error)
     return NextResponse.json({ error: `Error: ${error.message}` }, { status: 500 })
   }
-
-  // --- Certificate minting (only on pass) ---
-  let receipt: ExamReceipt | null = null
-  if (marks >= PASS_SCORE) {
-    try {
-      receipt = await handleExamSuccess(student, marks, scholarshipTxId, 10_000)
-    } catch (e) {
-      // Non-fatal: scholarship was already sent on-chain; log and continue
-      console.error("[completeExam] certificate minting failed (non-fatal):", e)
-    }
-  }
-
-  return NextResponse.json({ ok: true, scholarshipTxId, receipt })
 }
